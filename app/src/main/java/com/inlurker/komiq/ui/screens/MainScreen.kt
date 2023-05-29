@@ -3,6 +3,7 @@ package com.inlurker.komiq.ui.screens
 import android.annotation.SuppressLint
 import android.provider.CalendarContract.Colors
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,9 +31,12 @@ import com.inlurker.komiq.navigation.NavigationGraph
 fun MainScreen() {
     val navController = rememberNavController()
     Scaffold(
-        bottomBar = { BottomNavigationBar(navHostController = navController) }
+        bottomBar = { BottomNavigationBar(navHostController = navController) },
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
-        NavigationGraph(navController = navController)
+        NavigationGraph(
+            navController = navController
+        )
     }
 }
 
