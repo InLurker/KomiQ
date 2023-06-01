@@ -1,12 +1,13 @@
 package com.inlurker.komiq.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,23 +17,24 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBar
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.inlurker.komiq.R
 import com.inlurker.komiq.model.ComicPreviewModel
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
-import com.inlurker.komiq.ui.screens.components.RoundedDropdownBox
+import com.inlurker.komiq.ui.screens.components.SortingToolbar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,20 +109,31 @@ fun LibraryScreen() {
     var searchActive by remember { mutableStateOf(false) }
     var searchHint by remember { mutableStateOf("") }
 
-    LargeTopAppBarComponent(
-        title = "Library",
-        onHistoryClick = {},
-        onMoreClick = {}
-    ) {
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+    Scaffold(
+        topBar = {
+            LargeTopAppBarComponent(
+                title = "Library",
+                onHistoryClick = { /*TODO*/ },
+                onMoreClick = { /*TODO*/ },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        modifier = Modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .background(MaterialTheme.colorScheme.background)
+    ) { paddingValue ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier =  Modifier
+            modifier = Modifier
+                .padding(paddingValue)
                 .padding(horizontal = 16.dp)
         ) {
             item(span = { GridItemSpan(3) }) {
-                SearchBar(
+                DockedSearchBar(
                     query = searchQuery,
                     onQueryChange = { },
                     onSearch = { searchActive = false },
@@ -128,46 +141,36 @@ fun LibraryScreen() {
                     onActiveChange = { },
                     placeholder = { Text(searchHint) },
                     leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    modifier = Modifier
+                        IconButton(
+                            onClick = { /*TODO*/ },
+                            modifier = Modifier
+                                .fillMaxHeight()
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 )
                 {}
             }
-            item(span = { GridItemSpan(3) }) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RoundedDropdownBox(
-                        items = sortingMethods,
-                        selectedItem = sortingMethods[0],
-                        onItemSelected = { index, sortMethod ->
+            item(
+                span = { GridItemSpan(3) }
+            ) {
+                SortingToolbar(
+                    sortingMethods = sortingMethods,
+                    onSortingMethodSelected = { index, sortingMethod ->
 
-                        }
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.ArrowUpward,
-                        contentDescription = "Ascending",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.weight(1f))
+                    },
+                    onAscendingClicked = {
 
-                    Icon(
-                        imageVector = Icons.Filled.FilterList,
-                        contentDescription = "Ascending",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.GridView,
-                        contentDescription = "Ascending",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                    },
+                    onFilterClicked = {
+
+                    }
+                )
             }
             items(comicList) { item ->
                 Column(

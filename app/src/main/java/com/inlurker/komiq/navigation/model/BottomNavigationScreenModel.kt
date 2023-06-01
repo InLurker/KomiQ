@@ -20,9 +20,9 @@ sealed class BottomNavigationScreenModel(
         selectedIcon = Icons.Filled.CollectionsBookmark,
         unselectedIcon = Icons.Outlined.CollectionsBookmark
     )
-    object Explore: BottomNavigationScreenModel(
-        title = "Explore",
-        route = "explore",
+    object Discover: BottomNavigationScreenModel(
+        title = "Discover",
+        route = "discover",
         selectedIcon = Icons.Filled.Explore,
         unselectedIcon = Icons.Outlined.Explore
     )
