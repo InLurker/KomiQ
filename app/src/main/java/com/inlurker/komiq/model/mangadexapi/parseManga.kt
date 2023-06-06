@@ -1,22 +1,18 @@
 package com.inlurker.komiq.model.mangadexapi
 
+
 import com.inlurker.komiq.model.data.Attributes
 import com.inlurker.komiq.model.data.Manga
 import com.inlurker.komiq.model.data.Relationship
 import com.inlurker.komiq.model.data.Tag
-
-import com.squareup.moshi.Json
+import com.inlurker.komiq.model.mangadexapi.mangadexapihelper.MangaDexApiHelper
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.CompletableDeferred
+import okhttp3.Request
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONArray
-import org.json.JSONObject
 
 
 @JsonClass(generateAdapter = true)
@@ -37,12 +33,12 @@ data class MangadexMangaListResponse(
 data class MangadexDataAdapter(
     val id: String,
     val type: String,
-    val attributes: MangadexAttributesAdapter,
-    val relationships: List<Relationship>,
+    val attributes: MangadexMangaAttributesAdapter,
+    val relationships: List<MangadexRelationshipAdapter>,
 )
 
 @JsonClass(generateAdapter = true)
-data class MangadexAttributesAdapter(
+data class MangadexMangaAttributesAdapter(
     val title: Map<String, String>,
     val altTitles: List<Map<String, String>>,
     val description: Map<String, String>,
@@ -68,6 +64,18 @@ data class MangadexTagAttributesAdapter(
     val group: String
 )
 
+@JsonClass(generateAdapter = true)
+data class MangadexRelationshipAdapter(
+    val id: String,
+    val type: String,
+    val attributes: MangadexRelationshipAttributesAdapter?
+)
+
+@JsonClass(generateAdapter = true)
+data class MangadexRelationshipAttributesAdapter(
+    val fileName: String?
+)
+
 fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Manga {
     val attributes = data.attributes
 
@@ -91,6 +99,23 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Manga {
         }
     }
 
+    val relationshipList = mutableListOf<Relationship>()
+    var coverFileName = String()
+    data.relationships.forEach { relationship ->
+        if (relationship.type != "cover_art") {
+            relationshipList.add(
+                Relationship(
+                    id = relationship.id,
+                    type = relationship.type
+                )
+            )
+        } else {
+            relationship.attributes?.let {
+                coverFileName = it.fileName?:""
+            }
+        }
+    }
+
     return Manga(
         id = data.id,
         type = data.type,
@@ -106,14 +131,14 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Manga {
             addedAt = LocalDateTime.parse(attributes.createdAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
             updatedAt = LocalDateTime.parse(attributes.updatedAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         ),
-        relationships = data.relationships,
-        tags = tagList
+        relationships = relationshipList,
+        tags = tagList,
+        cover = coverFileName
     )
 }
 
 
-fun mangaListResponseToMangaList(data: List<MangadexDataAdapter>): List<Manga> {
-    val dataAdapterList = data
+fun mangaListResponseToMangaList(dataAdapterList: List<MangadexDataAdapter>): List<Manga> {
 
     val mangaList = mutableListOf<Manga>()
 
@@ -139,32 +164,30 @@ private fun findDescription(description: Map<String, String>, altTitles: List<Ma
     return englishDescription ?: originalLanguageDescription ?: altTitles[0].values.first()
 }
 
-fun getTop10PopularManga(): List<Manga> {
-    val client = OkHttpClient()
+
+suspend fun getTop10PopularManga(): List<Manga> {
+    val helper = MangaDexApiHelper.getInstance()
+
     val request = Request.Builder()
-        .url("https://api.mangadex.org/manga?order[followedCount]=desc&limit=10")
+        .url("https://api.mangadex.org/manga?order[followedCount]=desc&limit=10&includes[]=cover_art")
         .get()
         .build()
 
-    val response = client.newCall(request).execute()
-    val json = response.body?.string()
-    print(json)
-    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-    val adapter = moshi.adapter(MangadexMangaListResponse::class.java)
+    val mangaListDeferred = CompletableDeferred<List<Manga>>()
 
-    var parsedMangaList : List<Manga> = emptyList()
-    if(json != null) {
-        val mangaListResponse = adapter.fromJson(json)
-        if(mangaListResponse != null) {
-            parsedMangaList = mangaListResponseToMangaList(mangaListResponse.data)
+    helper.enqueueRequest(request) { response ->
+        val json = response?.body?.string()
+        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        val adapter = moshi.adapter(MangadexMangaListResponse::class.java)
+
+        val parsedMangaList = if (json != null) {
+            val mangaListResponse = adapter.fromJson(json)
+            mangaListResponse?.let { mangaListResponseToMangaList(it.data) } ?: emptyList()
+        } else {
+            emptyList()
         }
+        mangaListDeferred.complete(parsedMangaList)
     }
-    return parsedMangaList
+    return mangaListDeferred.await()
 }
 
-fun main() {
-    val top10PopularManga = getTop10PopularManga()
-    for (manga in top10PopularManga) {
-        println(manga.tags)
-    }
-}

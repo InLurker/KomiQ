@@ -7,7 +7,8 @@ data class Manga(
     val type: String,
     val attributes: Attributes,
     val relationships: List<Relationship>,
-    val tags: List<Tag>
+    val tags: List<Tag>,
+    val cover: String
 )
 
 data class Attributes(

@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,8 +63,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
+import com.inlurker.komiq.model.data.Manga
+import com.inlurker.komiq.model.mangadexapi.getTop10PopularManga
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +84,15 @@ fun DiscoverScreen() {
     var searchedAction by remember { mutableStateOf(false) }
     var searchHint by remember { mutableStateOf("Search comic") }
 
+    var popularMangaList by remember { mutableStateOf<List<Manga>>(emptyList()) }
+
+    // Fetch manga list asynchronously
+    LaunchedEffect(key1 = Unit) {
+        val fetchedMangaList = withContext(Dispatchers.IO) {
+            getTop10PopularManga()
+        }
+        popularMangaList = fetchedMangaList
+    }
 
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
@@ -159,7 +174,7 @@ fun DiscoverScreen() {
                         }
                     ) {}
                 }
-                item {
+                items (popularMangaList) { manga ->
                     Column {
                         Text(
                             text = "Popular Now",
@@ -312,4 +327,5 @@ fun PopularGenreTag(
 @Composable
 fun DiscoverPreview() {
     DiscoverScreen()
+
 }
