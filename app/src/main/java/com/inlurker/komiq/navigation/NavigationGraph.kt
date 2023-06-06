@@ -5,8 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.inlurker.komiq.navigation.model.BottomNavigationScreenModel
-import com.inlurker.komiq.ui.screens.DiscoverScreen
-import com.inlurker.komiq.ui.screens.LibraryScreen
+import com.inlurker.komiq.view.screens.DiscoverScreen
+import com.inlurker.komiq.view.screens.LibraryScreen
 
 @Composable
 fun NavigationGraph(navController: NavHostController) {

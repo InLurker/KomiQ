@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.theme
+package com.inlurker.komiq.view.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

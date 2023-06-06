@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens
+package com.inlurker.komiq.view.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.Crossfade

@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens
+package com.inlurker.komiq.view.screens
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -60,8 +61,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
-import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
-import com.inlurker.komiq.ui.screens.components.SortingToolbar
+import com.inlurker.komiq.view.screens.components.LargeTopAppBarComponent
+import com.inlurker.komiq.view.screens.components.SortingToolbar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -176,9 +177,9 @@ fun DiscoverScreen() {
                                         containerColor = MaterialTheme.colorScheme.background
                                     ),
                                     modifier = Modifier
-                                        .width(310.dp)
+                                        .width(330.dp)
                                         .height(160.dp)
-                                        .padding(8.dp)
+                                        .padding(6.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -218,8 +219,7 @@ fun DiscoverScreen() {
                                                     text = "Kusuriya no Hitorigoto",
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    textAlign = TextAlign.Start,
-
+                                                    textAlign = TextAlign.Start
                                                 )
                                                 Spacer(
                                                     Modifier.height(4.dp)
@@ -229,12 +229,15 @@ fun DiscoverScreen() {
                                                     "Drama",
                                                     "Historical",
                                                     "Medical",
-                                                    "Mystery"
+                                                    "Mystery",
+                                                    "NewGenre",
+                                                    "NewGenre"
                                                 )
                                                 Row(
                                                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                                                     modifier = Modifier
                                                         .wrapContentWidth(Alignment.Start)
+                                                        .clipToBounds()
                                                 ) {
                                                     for (genre in GenreList) {
                                                         PopularGenreTag(
@@ -249,9 +252,11 @@ fun DiscoverScreen() {
                                                 )
                                                 Text(
                                                     text = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
-                                                    fontSize = 7.sp,
+                                                    fontSize = 8.sp,
                                                     overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start
+                                                    textAlign = TextAlign.Start,
+                                                    lineHeight = 10.sp,
+                                                    letterSpacing = 0.2.sp
                                                 )
                                             }
                                         }
@@ -288,10 +293,11 @@ fun PopularGenreTag(
 ) {
     Text(
         text = text,
-        fontSize = 7.sp,
+        fontSize = 8.sp,
         textAlign = TextAlign.Center,
         color = textColor,
         maxLines = 1,
+        overflow = TextOverflow.Clip,
         modifier = Modifier
             .background(
                 backgroundColor,
