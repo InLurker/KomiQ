@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.theme
+package com.inlurker.komiq.ui.theme
 
 import android.app.Activity
 import android.os.Build

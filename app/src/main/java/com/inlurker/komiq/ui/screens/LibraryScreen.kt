@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.screens
+package com.inlurker.komiq.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.inlurker.komiq.R
 import com.inlurker.komiq.model.ComicPreviewModel
-import com.inlurker.komiq.view.screens.components.LargeTopAppBarComponent
-import com.inlurker.komiq.view.screens.components.SortingToolbar
+import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
+import com.inlurker.komiq.ui.screens.components.SortingToolbar
 
 
 @OptIn(ExperimentalMaterial3Api::class)

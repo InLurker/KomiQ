@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.screens
+package com.inlurker.komiq.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.Crossfade
@@ -19,8 +19,8 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.inlurker.komiq.navigation.NavigationGraph
-import com.inlurker.komiq.navigation.model.BottomNavigationScreenModel
+import com.inlurker.komiq.ui.navigation.NavigationGraph
+import com.inlurker.komiq.ui.navigation.navigationscreenmodel.BottomNavigationScreenModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable

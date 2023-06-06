@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.screens
+package com.inlurker.komiq.ui.screens
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -61,8 +61,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
-import com.inlurker.komiq.view.screens.components.LargeTopAppBarComponent
-import com.inlurker.komiq.view.screens.components.SortingToolbar
+import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
+import com.inlurker.komiq.ui.screens.components.SortingToolbar
 
 
 @OptIn(ExperimentalMaterial3Api::class)

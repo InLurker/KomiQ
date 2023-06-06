@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.screens.components
+package com.inlurker.komiq.ui.screens.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

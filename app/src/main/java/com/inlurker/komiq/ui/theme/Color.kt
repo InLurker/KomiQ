@@ -1,4 +1,4 @@
-package com.inlurker.komiq.view.theme
+package com.inlurker.komiq.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

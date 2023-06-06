@@ -1,4 +1,4 @@
-package com.inlurker.komiq.navigation.model
+package com.inlurker.komiq.ui.navigation.navigationscreenmodel
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CollectionsBookmark

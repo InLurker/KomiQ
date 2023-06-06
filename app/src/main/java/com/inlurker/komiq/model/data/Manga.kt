@@ -1,5 +1,7 @@
 package com.inlurker.komiq.model.data
 
+import java.time.LocalDateTime
+
 data class Manga(
     val id: String,
     val type: String,
@@ -13,19 +15,17 @@ data class Attributes(
     val altTitle: String,
     val description: String,
     val originalLanguage: String,
-    val lastVolume: String,
-    val lastChapter: String,
     val publicationDemographic: String?,
     val status: String,
     val year: Int,
     val contentRating: String,
-    val addedAt: String? = null,
-    val updatedAt: String
+    val addedAt: LocalDateTime?,
+    val updatedAt: LocalDateTime?
 )
 
 data class Tag(
     val name: String,
-    val group: String,
+    val group: String
 )
 
 data class Relationship(
