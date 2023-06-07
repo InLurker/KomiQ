@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,8 +38,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
-import com.inlurker.komiq.ui.screens.helper.generateMonochromaticPalette
+import com.inlurker.komiq.ui.screens.helper.adjustTone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,27 +63,40 @@ fun MangaDetailScreen() {
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
+    val imageUrl = "https://mangadex.org/covers/e18fe8c6-f6dc-4f05-8462-7b2083ff9a6c/992fa6f5-c206-45e8-83cb-01e579c7adc7.jpg.256.jpg"
+
     val drawableImageSource = R.drawable.apo
     val colorPalette = createPalette(context, drawableImageSource)
     val dominantSwatch = colorPalette.dominantSwatch
 
-    val tagColor: Color
     val tagTextColor: Color
 
-    val monochromaticPalette: List<Color>
+    val dominantColor: Color
+    val lightDominant: Color
+    val darkDominant: Color
 
     if (dominantSwatch != null) {
-        tagColor = Color(dominantSwatch.rgb)
+        dominantColor = Color(dominantSwatch.rgb)
         tagTextColor = Color(dominantSwatch.bodyTextColor)
-        monochromaticPalette = generateMonochromaticPalette(dominantSwatch.rgb, 5)
+        lightDominant = adjustTone(dominantColor, 0.5f)
+        darkDominant = adjustTone(dominantColor, 1.2f)
 
     } else {
-        tagColor = MaterialTheme.colorScheme.secondaryContainer
+        dominantColor = MaterialTheme.colorScheme.secondaryContainer
         tagTextColor = MaterialTheme.colorScheme.onSecondaryContainer
-        monochromaticPalette = generateMonochromaticPalette(MaterialTheme.colorScheme.primary.hashCode(), 5)
+        lightDominant = adjustTone(MaterialTheme.colorScheme.primary, 0.5f)
+        darkDominant= adjustTone(MaterialTheme.colorScheme.primary, 1.2f)
     }
 
-
+    val GenreList = listOf(
+        "Comedy",
+        "Drama",
+        "Historical",
+        "Medical",
+        "Mystery",
+        "NewGenre",
+        "NewGenre"
+    )
 
     Scaffold(
         topBar = {
@@ -106,7 +118,7 @@ fun MangaDetailScreen() {
                 ) {
                     Column(
                         modifier = Modifier
-                            .zIndex(1f)
+                            .zIndex(3f)
                             .nestedScroll(scrollBehavior.nestedScrollConnection)
                     ){
                         TopAppBar(
@@ -134,14 +146,13 @@ fun MangaDetailScreen() {
                                 }
                             },
                             scrollBehavior = scrollBehavior,
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Transparent)
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                         )
                         Row(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp)
                                 .height(150.dp)
-                                .zIndex(1f)
                         ) {
                             Image(
                                 painterResource(id = drawableImageSource),
@@ -167,75 +178,95 @@ fun MangaDetailScreen() {
                                     fontWeight = FontWeight.SemiBold,
                                     textAlign = TextAlign.Start
                                 )
-                                Spacer(
-                                    Modifier.height(4.dp)
-                                )
-                                val GenreList = listOf(
-                                    "Comedy",
-                                    "Drama",
-                                    "Historical",
-                                    "Medical",
-                                    "Mystery",
-                                    "NewGenre",
-                                    "NewGenre"
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                    modifier = Modifier
-                                        .wrapContentWidth(Alignment.Start)
-                                        .clipToBounds()
-                                ) {
-                                    for (genre in GenreList) {
-                                        PopularGenreTag(
-                                            text = genre,
-                                            backgroundColor = tagColor,
-                                            textColor = tagTextColor
-                                        )
-                                    }
-                                }
-                                Spacer(
-                                    Modifier.height(4.dp)
-                                )
-                                Text(
-                                    text = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
-                                    fontSize = 8.sp,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start,
-                                    lineHeight = 10.sp,
-                                    letterSpacing = 0.2.sp
-                                )
+                                
                             }
                         }
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.White
+                                    )
+                                )
+                            )
+                            .zIndex(2f)
+                    )
                     Image(
-                        painter = painterResource(id = drawableImageSource),
-                        contentDescription = "cover",
+                        painter = painterResource(drawableImageSource),
+                        contentDescription = "Blurred Cover",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .matchParentSize()
-                            .blur(10.dp)
-                            .alpha(0.4f)
+                            .blur(3.dp)
                             .zIndex(0f)
+                            .background(dominantColor)
+                            .alpha(0.4f)
                     )
+                    /*
+                    BlurredAsyncImage(
+                        context = context,
+                        imageUrl = imageUrl,
+                        contentDescription = "Blurred Cover",
+                        contentScale = ContentScale.Crop,
+                        blurRadius = 10f,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .zIndex(0f)
+                            .background(dominantColor)
+                            .alpha(0.4f)
+                    )
+                     */
+                }
+            }
+            item {
+                Text(
+                    text = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
+                    fontSize = 8.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    lineHeight = 10.sp,
+                    letterSpacing = 0.2.sp
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.Start)
+                        .clipToBounds()
+                ) {
+                    for (genre in GenreList) {
+                        PopularGenreTag(
+                            text = genre,
+                            backgroundColor = dominantColor,
+                            textColor = tagTextColor
+                        )
+                    }
                 }
             }
             item {
                 Column {
-                    monochromaticPalette.forEach { color ->
-                        Box(
-                            Modifier
-                                .background(color)
-                        ) {
-                            Text(color.toString())
-                        }
+                    Box(
+                        Modifier
+                            .background(dominantColor)
+                    ) {
+                        Text(dominantColor.toString())
                     }
-                }
-                Box(
-                    Modifier
-                        .background(tagColor)
-                ) {
-                    Text("original")
-                    Text(tagColor.toString())
+                    Box(
+                        Modifier
+                            .background(lightDominant)
+                    ) {
+                        Text(lightDominant.toString())
+                    }
+                    Box(
+                        Modifier
+                            .background(darkDominant)
+                    ) {
+                        Text(darkDominant.toString())
+                    }
                 }
             }
         }
