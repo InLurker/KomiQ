@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,7 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
-import com.inlurker.komiq.ui.screens.helper.adjustTone
+import com.inlurker.komiq.ui.screens.helper.adjustLuminance
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,26 +68,14 @@ fun MangaDetailScreen() {
 
     val drawableImageSource = R.drawable.apo
     val colorPalette = createPalette(context, drawableImageSource)
-    val dominantSwatch = colorPalette.dominantSwatch
+    val vibrantSwatch = colorPalette.vibrantSwatch
 
-    val tagTextColor: Color
+    val vibrantColor: Color = vibrantSwatch?.let { Color(it.rgb) } ?: MaterialTheme.colorScheme.secondaryContainer
+    val tagTextColor: Color = vibrantSwatch?.let { Color(it.bodyTextColor) } ?: MaterialTheme.colorScheme.onSecondaryContainer
 
-    val dominantColor: Color
-    val lightDominant: Color
-    val darkDominant: Color
-
-    if (dominantSwatch != null) {
-        dominantColor = Color(dominantSwatch.rgb)
-        tagTextColor = Color(dominantSwatch.bodyTextColor)
-        lightDominant = adjustTone(dominantColor, 0.5f)
-        darkDominant = adjustTone(dominantColor, 1.2f)
-
-    } else {
-        dominantColor = MaterialTheme.colorScheme.secondaryContainer
-        tagTextColor = MaterialTheme.colorScheme.onSecondaryContainer
-        lightDominant = adjustTone(MaterialTheme.colorScheme.primary, 0.5f)
-        darkDominant= adjustTone(MaterialTheme.colorScheme.primary, 1.2f)
-    }
+    val luminanceModifier = if (isSystemInDarkTheme()) 0.8f else 0.2f
+    val secondaryVibrantColor: Color = adjustLuminance(vibrantColor, luminanceModifier)
+    val tertiaryVibrantColor: Color = adjustLuminance(vibrantColor, 1f - luminanceModifier)
 
     val GenreList = listOf(
         "Comedy",
@@ -126,8 +115,9 @@ fun MangaDetailScreen() {
                             navigationIcon = {
                                 IconButton(onClick = { }) {
                                     Icon(
-                                        imageVector = Icons.Filled.ArrowBack,
-                                        contentDescription = "History"
+                                        imageVector = Icons.Outlined.ArrowBack,
+                                        contentDescription = "History",
+                                        tint = secondaryVibrantColor
                                     )
                                 }
                             },
@@ -135,13 +125,15 @@ fun MangaDetailScreen() {
                                 IconButton(onClick = { }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Search,
-                                        contentDescription = "History"
+                                        contentDescription = "History",
+                                        tint = secondaryVibrantColor
                                     )
                                 }
                                 IconButton(onClick = { }) {
                                     Icon(
                                         imageVector = Icons.Outlined.MoreVert,
-                                        contentDescription = "More"
+                                        contentDescription = "More",
+                                        tint = secondaryVibrantColor
                                     )
                                 }
                             },
@@ -151,7 +143,10 @@ fun MangaDetailScreen() {
                         Row(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(8.dp)
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 8.dp
+                                )
                                 .height(150.dp)
                         ) {
                             Image(
@@ -189,7 +184,7 @@ fun MangaDetailScreen() {
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color.Transparent,
+                                        Color.White.copy(alpha = 0.3f),
                                         Color.White
                                     )
                                 )
@@ -204,7 +199,7 @@ fun MangaDetailScreen() {
                             .matchParentSize()
                             .blur(3.dp)
                             .zIndex(0f)
-                            .background(dominantColor)
+                            .background(vibrantColor)
                             .alpha(0.4f)
                     )
                     /*
@@ -241,7 +236,7 @@ fun MangaDetailScreen() {
                     for (genre in GenreList) {
                         PopularGenreTag(
                             text = genre,
-                            backgroundColor = dominantColor,
+                            backgroundColor = vibrantColor,
                             textColor = tagTextColor
                         )
                     }
@@ -251,21 +246,21 @@ fun MangaDetailScreen() {
                 Column {
                     Box(
                         Modifier
-                            .background(dominantColor)
+                            .background(vibrantColor)
                     ) {
-                        Text(dominantColor.toString())
+                        Text(vibrantColor.toString())
                     }
                     Box(
                         Modifier
-                            .background(lightDominant)
+                            .background(secondaryVibrantColor)
                     ) {
-                        Text(lightDominant.toString())
+                        Text(secondaryVibrantColor.toString())
                     }
                     Box(
                         Modifier
-                            .background(darkDominant)
+                            .background(tertiaryVibrantColor)
                     ) {
-                        Text(darkDominant.toString())
+                        Text(tertiaryVibrantColor.toString())
                     }
                 }
             }
