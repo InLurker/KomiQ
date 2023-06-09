@@ -143,11 +143,9 @@ fun MangaDetailScreen() {
                         Row(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(
-                                    horizontal = 16.dp,
-                                    vertical = 8.dp
-                                )
-                                .height(150.dp)
+                                .padding(horizontal = 16.dp)
+                                .padding(top = 8.dp)
+                                .height(180.dp)
                         ) {
                             Image(
                                 painterResource(id = drawableImageSource),
@@ -164,16 +162,23 @@ fun MangaDetailScreen() {
                                     .padding(top = 10.dp)
                             ) {
                                 Text(
-                                    text = "Hyuuga Natsu",
-                                    fontSize = 10.sp
+                                    text = "2017, Ongoing",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+
                                 Text(
                                     text = "Kusuriya no Hitorigoto",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.Start
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Medium
                                 )
-                                
+
+                                Text(
+                                    text = "The Apothecary Diaries",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Normal
+                                )
                             }
                         }
                     }
@@ -184,24 +189,29 @@ fun MangaDetailScreen() {
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color.White.copy(alpha = 0.3f),
-                                        Color.White
+                                        MaterialTheme.colorScheme.surface.copy(0.3f),
+                                        MaterialTheme.colorScheme.surface
                                     )
                                 )
                             )
                             .zIndex(2f)
                     )
-                    Image(
-                        painter = painterResource(drawableImageSource),
-                        contentDescription = "Blurred Cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .matchParentSize()
-                            .blur(3.dp)
-                            .zIndex(0f)
-                            .background(vibrantColor)
-                            .alpha(0.4f)
-                    )
+                    Box(modifier = Modifier
+                        .matchParentSize()
+                        .background(vibrantColor)
+                        .zIndex(0f)
+                    ) {
+                        Image(
+                            painter = painterResource(drawableImageSource),
+                            contentDescription = "Blurred Cover",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .matchParentSize()
+                                .blur(3.dp)
+                                .alpha(0.5f)
+                        )
+                    }
+
                     /*
                     BlurredAsyncImage(
                         context = context,
@@ -219,26 +229,39 @@ fun MangaDetailScreen() {
                 }
             }
             item {
-                Text(
-                    text = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
-                    fontSize = 8.sp,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    lineHeight = 10.sp,
-                    letterSpacing = 0.2.sp
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                Column(
                     modifier = Modifier
-                        .wrapContentWidth(Alignment.Start)
-                        .clipToBounds()
-                ) {
-                    for (genre in GenreList) {
-                        PopularGenreTag(
-                            text = genre,
-                            backgroundColor = vibrantColor,
-                            textColor = tagTextColor
+                        .padding(
+                            horizontal = 16.dp
                         )
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Description",
+                        style = MaterialTheme.typography.titleMedium,
+
+                    )
+                    Text(
+                        text = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
+                        fontSize = 8.sp,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        lineHeight = 10.sp,
+                        letterSpacing = 0.2.sp
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier
+                            .wrapContentWidth(Alignment.Start)
+                            .clipToBounds()
+                    ) {
+                        for (genre in GenreList) {
+                            PopularGenreTag(
+                                text = genre,
+                                backgroundColor = vibrantColor,
+                                textColor = tagTextColor
+                            )
+                        }
                     }
                 }
             }
