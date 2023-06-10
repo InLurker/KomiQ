@@ -2,30 +2,43 @@ package com.inlurker.komiq.ui.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,6 +46,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
@@ -62,13 +82,17 @@ fun MangaDetailScreen() {
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
-    val imageUrl = "https://mangadex.org/covers/e18fe8c6-f6dc-4f05-8462-7b2083ff9a6c/992fa6f5-c206-45e8-83cb-01e579c7adc7.jpg.256.jpg"
+    val imageUrl =
+        "https://mangadex.org/covers/e18fe8c6-f6dc-4f05-8462-7b2083ff9a6c/992fa6f5-c206-45e8-83cb-01e579c7adc7.jpg.256.jpg"
+
+    var isMangaInLibrary by remember { mutableStateOf(false) }
 
     val drawableImageSource = R.drawable.apo
     val colorPalette = createPalette(context, drawableImageSource)
     val vibrantSwatch = colorPalette.vibrantSwatch
 
-    val vibrantColor: Color = vibrantSwatch?.let { Color(it.rgb) } ?: MaterialTheme.colorScheme.secondaryContainer
+    val vibrantColor: Color =
+        vibrantSwatch?.let { Color(it.rgb) } ?: MaterialTheme.colorScheme.secondaryContainer
 
     val secondaryVibrantColor = if (vibrantColor != Color.Black && vibrantColor != Color.White) {
         adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.3f else 0.8f)
@@ -100,6 +124,7 @@ fun MangaDetailScreen() {
             .background(MaterialTheme.colorScheme.background)
     ) { paddingValue ->
         LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .padding(paddingValue)
         ) {
@@ -113,7 +138,7 @@ fun MangaDetailScreen() {
                         modifier = Modifier
                             .zIndex(3f)
                             .nestedScroll(scrollBehavior.nestedScrollConnection)
-                    ){
+                    ) {
                         TopAppBar(
                             title = {},
                             navigationIcon = {
@@ -129,7 +154,7 @@ fun MangaDetailScreen() {
                                 IconButton(onClick = { }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Search,
-                                        contentDescription = "History",
+                                        contentDescription = "Search",
                                         tint = topAppBarIconButtonColor
                                     )
                                 }
@@ -167,7 +192,7 @@ fun MangaDetailScreen() {
                             ) {
                                 Text(
                                     text = "2017, Ongoing",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Normal,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     overflow = TextOverflow.Ellipsis,
@@ -184,27 +209,22 @@ fun MangaDetailScreen() {
 
                                 Text(
                                     text = "The Apothecary Diaries",
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Normal,
                                     overflow = TextOverflow.Ellipsis,
                                     maxLines = 2
                                 )
-                                Spacer(Modifier.weight(1f))
-                                FilledTonalButton(
-                                    onClick = { /*TODO*/ },
-                                    contentPadding = PaddingValues(0.dp),
 
-                                    modifier = Modifier
-                                        .height(12.dp)
-                                        .padding(0.dp)
-                                ) {
-                                    Row {
-                                        Text(
-                                            text = "In Library",
-                                            fontSize = 5.sp
-                                        )
+                                Spacer(Modifier.weight(1f))
+
+                                AddToLibraryButton(
+                                    vibrantColor = vibrantColor,
+                                    tonalFilledColor = secondaryVibrantColor,
+                                    isInLibrary = isMangaInLibrary,
+                                    onToggleAction = { inLibrary ->
+                                        isMangaInLibrary = inLibrary
                                     }
-                                }
+                                )
                             }
                         }
                     }
@@ -222,10 +242,11 @@ fun MangaDetailScreen() {
                             )
                             .zIndex(2f)
                     )
-                    Box(modifier = Modifier
-                        .matchParentSize()
-                        .background(vibrantColor)
-                        .zIndex(0f)
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(vibrantColor)
+                            .zIndex(0f)
                     ) {
                         Image(
                             painter = painterResource(drawableImageSource),
@@ -262,33 +283,126 @@ fun MangaDetailScreen() {
                     collapseTextButtonColor = vibrantColor,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
-                        .padding(vertical = 8.dp)
                 )
             }
             item {
-                Column {
-                    Box(
-                        Modifier
-                            .background(vibrantColor)
-                    ) {
-                        Text(vibrantColor.toString())
-                    }
-                    Box(
-                        Modifier
-                            .background(secondaryVibrantColor)
-                    ) {
-                        Text(secondaryVibrantColor.toString())
-                    }
+                Button(
+                    onClick = {
+                        /* TODO */
+                    },
+                    colors = ButtonDefaults.buttonColors(vibrantColor),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .height(35.dp)
+                ) {
+                    Text(
+                        text = "Start Reading Chapter 1",
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
+            }
+            item {
+                Icon(
+                    imageVector = Icons.Filled.Bookmark,
+                    contentDescription = "Filled Bookmark Symbol",
+                    tint = vibrantColor
+                )
+                Icon(
+                    imageVector = Icons.Outlined.BookmarkBorder,
+                    contentDescription = "Outlined Bookmark Symbol",
+                    tint = vibrantColor
+                )
             }
         }
     }
 }
 
-fun createPalette(context: Context, drawable: Int): Palette {
+private fun createPalette(context: Context, drawable: Int): Palette {
     val bitmap = BitmapFactory.decodeResource(context.resources, drawable)
     return Palette.from(bitmap).generate()
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddToLibraryButton(
+    vibrantColor: Color,
+    tonalFilledColor: Color,
+    isInLibrary: Boolean,
+    onToggleAction: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = remember { Animatable(Color.Transparent) }
+
+    var buttonText by remember { mutableStateOf("Add To Library") }
+
+    LaunchedEffect(isInLibrary) {
+        if (isInLibrary) {
+            buttonText = "In Library"
+            backgroundColor.animateTo(tonalFilledColor)
+        }
+        else {
+            buttonText = "Add to Library"
+            backgroundColor.animateTo(Color.Transparent)
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentEnforcement provides false,
+    ) {
+        Button(
+            onClick = { onToggleAction(!isInLibrary) },
+            colors = ButtonDefaults.buttonColors(backgroundColor.value),
+            contentPadding = PaddingValues(
+                start = 6.dp,
+                top = 4.dp,
+                bottom = 4.dp,
+                end = 8.dp
+            ),
+            border = if (isInLibrary) null else BorderStroke(width = 0.3.dp, color = Color.Gray),
+            modifier = modifier
+                .defaultMinSize(
+                    minHeight = 1.dp,
+                    minWidth = 1.dp
+                )
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Crossfade(targetState = isInLibrary) { isInLibrary ->
+                    if (isInLibrary) {
+                        Icon(
+                            imageVector = Icons.Filled.Bookmark,
+                            contentDescription = "Filled Bookmark Symbol",
+                            tint = vibrantColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Outlined Bookmark Symbol",
+                            tint = vibrantColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(2.dp))
+
+                Text(
+                    text = buttonText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 9.sp,
+                    lineHeight = 10.sp,
+                    letterSpacing = 0.1.sp,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .animateContentSize()
+                )
+            }
+        }
+    }
+}
+
 
 
 @Preview
