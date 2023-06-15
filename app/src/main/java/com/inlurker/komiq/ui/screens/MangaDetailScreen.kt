@@ -2,12 +2,14 @@ package com.inlurker.komiq.ui.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.text.format.DateFormat
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,12 +31,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Filter
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,10 +65,13 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -73,6 +82,7 @@ import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
 import com.inlurker.komiq.ui.screens.helper.adjustLuminance
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,19 +102,20 @@ fun MangaDetailScreen() {
     val vibrantSwatch = colorPalette.vibrantSwatch
 
     val vibrantColor: Color =
-        vibrantSwatch?.let { Color(it.rgb) } ?: MaterialTheme.colorScheme.secondaryContainer
+        vibrantSwatch?.let { Color(it.rgb) } ?: MaterialTheme.colorScheme.primary
 
     val secondaryVibrantColor = if (vibrantColor != Color.Black && vibrantColor != Color.White) {
-        adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.3f else 0.8f)
+        adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.2f else 0.9f)
     } else {
-        vibrantColor
+        MaterialTheme.colorScheme.secondaryContainer
     }
 
     val topAppBarIconButtonColor = if (vibrantColor != Color.Black && vibrantColor != Color.White) {
         adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.8f else 0.3f)
     } else {
-        vibrantColor
+        MaterialTheme.colorScheme.onPrimaryContainer
     }
+
     val GenreList = listOf(
         "Comedy",
         "Drama",
@@ -225,6 +236,16 @@ fun MangaDetailScreen() {
                                         isMangaInLibrary = inLibrary
                                     }
                                 )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "Hyuuga Natsu, Nanao Ikki, Nekokurage",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 2
+                                )
                             }
                         }
                     }
@@ -303,16 +324,55 @@ fun MangaDetailScreen() {
                 }
             }
             item {
-                Icon(
-                    imageVector = Icons.Filled.Bookmark,
-                    contentDescription = "Filled Bookmark Symbol",
-                    tint = vibrantColor
-                )
-                Icon(
-                    imageVector = Icons.Outlined.BookmarkBorder,
-                    contentDescription = "Outlined Bookmark Symbol",
-                    tint = vibrantColor
-                )
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Button(
+                        onClick = { /*TODO*/ },
+                        contentPadding = PaddingValues(0.dp),
+                        shape = RectangleShape,
+                        colors = ButtonDefaults.buttonColors(Color.Transparent),
+                        modifier = Modifier
+                            .height(36.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "140 Chapters",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Filter Chapters",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                    Divider(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        thickness = 1.dp
+                    )
+                    val chapterPreview = MangaChapterPreview(
+                        volumeNumber = 1,
+                        chapterNumber = 23,
+                        chapterName = "Chapter Name",
+                        uploadDate = Date(),
+                        scanlationGroup = "Scanlation Group"
+                    )
+                    for (i in 1..23) {
+                        ChapterListElement(
+                            chapterPreview = chapterPreview,
+                            backgroundColor = secondaryVibrantColor
+                        )
+                        Divider(
+                            color = Color.LightGray,
+                            thickness = 1.dp
+                        )
+                    }
+                }
             }
         }
     }
@@ -340,8 +400,7 @@ fun AddToLibraryButton(
         if (isInLibrary) {
             buttonText = "In Library"
             backgroundColor.animateTo(tonalFilledColor)
-        }
-        else {
+        } else {
             buttonText = "Add to Library"
             backgroundColor.animateTo(Color.Transparent)
         }
@@ -404,7 +463,79 @@ fun AddToLibraryButton(
 }
 
 
+data class MangaChapterPreview(
+    val volumeNumber: Int,
+    val chapterNumber: Int,
+    val chapterName: String,
+    val uploadDate: Date,
+    val scanlationGroup: String
+)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChapterListElement(
+    chapterPreview: MangaChapterPreview,
+    backgroundColor: Color
+) {
+    val formattedUploadDate = remember {
+        DateFormat.format("dd MMM yyyy", chapterPreview.uploadDate)
+    }
 
+    val chapterDetails = buildAnnotatedString {
+        if (chapterPreview.volumeNumber != 0) {
+            append("Vol ${chapterPreview.volumeNumber}. ")
+        }
+        append("Chapter ${chapterPreview.chapterNumber} - ")
+        append(chapterPreview.chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
+    }
+
+    val chapterSourceInfo = buildAnnotatedString {
+        append(formattedUploadDate)
+        append(" · ")
+        append(chapterPreview.scanlationGroup.takeIf { it.isNotEmpty() } ?: "Unknown")
+    }
+
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentEnforcement provides false,
+    ) {
+        Button(
+            onClick = { /*TODO*/ },
+            contentPadding = PaddingValues(
+                horizontal = 12.dp,
+                vertical = 8.dp
+            ),
+            shape = RectangleShape,
+            colors = ButtonDefaults.buttonColors(backgroundColor),
+            modifier = Modifier
+                .wrapContentSize()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = chapterDetails,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = chapterSourceInfo,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 10.sp,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
 @Preview
 @Composable
 fun MangaDetailScreenPreview() {
