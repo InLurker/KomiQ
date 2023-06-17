@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import com.inlurker.komiq.ui.screens.MainScreen
 import com.inlurker.komiq.ui.theme.KomiQTheme
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

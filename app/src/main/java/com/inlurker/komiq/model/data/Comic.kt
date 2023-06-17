@@ -1,16 +1,20 @@
 package com.inlurker.komiq.model.data
 
+import androidx.room.Entity
 import java.time.LocalDateTime
 
-data class Manga(
+@Entity
+data class Comic(
     val id: String,
     val type: String,
     val attributes: Attributes,
-    val relationships: List<Relationship>,
+    val authors: List<String>,
     val tags: List<Tag>,
-    val cover: String
+    val cover: String,
+    val isInLibrary: Boolean,
 )
 
+@Entity
 data class Attributes(
     val title: String,
     val altTitle: String,
@@ -21,15 +25,12 @@ data class Attributes(
     val year: Int,
     val contentRating: String,
     val addedAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?
+    val updatedAt: LocalDateTime?,
+    val lastReadChaper: Int
 )
 
+@Entity
 data class Tag(
     val name: String,
     val group: String
-)
-
-data class Relationship(
-    val id: String,
-    val type: String,
 )

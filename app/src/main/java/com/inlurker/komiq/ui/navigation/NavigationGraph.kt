@@ -2,9 +2,12 @@ package com.inlurker.komiq.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.BottomNavigationScreenModel
+import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.screens.DiscoverScreen
 import com.inlurker.komiq.ui.screens.LibraryScreen
 
@@ -19,6 +22,16 @@ fun NavigationGraph(navController: NavHostController) {
         }
         composable(route = BottomNavigationScreenModel.Discover.route) {
             DiscoverScreen()
+        }
+        composable(
+            route = ComicNavigationScreenModel.Detail.route,
+            arguments = listOf(navArgument("comicId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            backStackEntry.arguments?.let { argument ->
+                argument.getString("comicId")?.let { comicId ->
+                    //ComicDetailScreen(Com) TODO
+                }
+            }
         }
     }
 }

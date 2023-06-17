@@ -41,7 +41,6 @@ class MangaDexApiHelper {
                 isRequestRunning = false
                 processRequestQueue(callback)
             }
-
             override fun onResponse(call: Call, response: Response) {
                 // Handle request response
                 isRequestRunning = false
@@ -54,7 +53,6 @@ class MangaDexApiHelper {
 
     companion object {
         private var instance: MangaDexApiHelper? = null
-
         fun getInstance(): MangaDexApiHelper {
             if (instance == null) {
                 instance = MangaDexApiHelper()
