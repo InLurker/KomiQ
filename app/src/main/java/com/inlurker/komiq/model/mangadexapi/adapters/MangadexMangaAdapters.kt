@@ -1,20 +1,7 @@
-package com.inlurker.komiq.model.mangadexapi
+package com.inlurker.komiq.model.mangadexapi.adapters
 
 import com.squareup.moshi.JsonClass
 
-@JsonClass(generateAdapter = true)
-data class MangadexMangaResponse(
-    val result: String,
-    val response: String,
-    val data: MangadexDataAdapter
-)
-
-@JsonClass(generateAdapter = true)
-data class MangadexMangaListResponse(
-    val result: String,
-    val response: String,
-    val data: List<MangadexDataAdapter>
-)
 
 @JsonClass(generateAdapter = true)
 data class MangadexDataAdapter(
@@ -62,4 +49,18 @@ data class MangadexRelationshipAdapter(
 data class MangadexRelationshipAttributesAdapter(
     val name: String?,
     val fileName: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class MangadexMangaResponse(
+    val result: String,
+    val response: String,
+    val data: MangadexDataAdapter?
+)
+
+@JsonClass(generateAdapter = true)
+data class MangadexMangaListResponse(
+    val result: String,
+    val response: String,
+    val data: List<MangadexDataAdapter>?
 )

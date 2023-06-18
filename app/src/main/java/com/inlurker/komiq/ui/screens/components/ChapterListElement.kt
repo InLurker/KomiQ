@@ -1,6 +1,5 @@
 package com.inlurker.komiq.ui.screens.components
 
-import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -15,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,31 +23,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.inlurker.komiq.ui.screens.MangaChapterPreview
+import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChapterListElement(
-    chapterPreview: MangaChapterPreview,
+    volumeNumber: Int,
+    chapterNumber: Float,
+    chapterName: String,
+    uploadDate: String,
     backgroundColor: Color,
     onClick: () -> Unit
 ) {
-    val formattedUploadDate = remember {
-        DateFormat.format("dd MMM yyyy", chapterPreview.uploadDate)
-    }
 
     val chapterDetails = buildAnnotatedString {
-        if (chapterPreview.volumeNumber != 0) {
-            append("Vol ${chapterPreview.volumeNumber}. ")
+        if (volumeNumber != 0) {
+            append("Vol $volumeNumber. ")
         }
-        append("Chapter ${chapterPreview.chapterNumber} - ")
-        append(chapterPreview.chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
+        append("Chapter ${removeTrailingZero(chapterNumber)} - ")
+        append(chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
     }
 
     val chapterSourceInfo = buildAnnotatedString {
-        append(formattedUploadDate)
-        append(" · ")
-        append(chapterPreview.scanlationGroup.takeIf { it.isNotEmpty() } ?: "Unknown")
+        append(uploadDate)
     }
 
     CompositionLocalProvider(

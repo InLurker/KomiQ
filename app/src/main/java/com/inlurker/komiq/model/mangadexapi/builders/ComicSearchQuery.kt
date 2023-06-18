@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.builder
+package com.inlurker.komiq.model.mangadexapi.builders
 
 import com.inlurker.komiq.model.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.mangadexapi.constants.SortingOrder
@@ -16,7 +16,7 @@ class ComicSearchQuery private constructor(
     class Builder {
         private var searchQuery: String = ""
         private var sortingMethod: String = MangaOrderOptions.RELEVANCE
-        private var sortingOrder: String = SortingOrder.ASC
+        private var sortingOrder: String = SortingOrder.DESC
         private var comicAmount: Int = 30
         private var offsetAmount: Int = 0
         private var includedTags: List<String> = emptyList()

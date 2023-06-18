@@ -1,16 +1,12 @@
-package com.inlurker.komiq.model.mangadexapi
+package com.inlurker.komiq.model.mangadexapi.helper
 
 
 import com.inlurker.komiq.model.data.Attributes
 import com.inlurker.komiq.model.data.Comic
 import com.inlurker.komiq.model.data.Tag
-import com.inlurker.komiq.model.mangadexapi.builder.ComicSearchQuery
-import com.inlurker.komiq.model.mangadexapi.constants.GenreTag
-import com.inlurker.komiq.model.mangadexapi.constants.ThemeTag
+import com.inlurker.komiq.model.mangadexapi.adapters.MangadexDataAdapter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-
 
 fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     val attributes = data.attributes
@@ -97,30 +93,4 @@ fun mangaListResponseToComicList(dataAdapterList: List<MangadexDataAdapter>): Li
         comicList.add(mangadexDataAdapterToManga(dataAdapter))
     }
     return comicList
-}
-
-
-
-suspend fun main() {
-    val query = ComicSearchQuery.Builder()
-        .searchQuery("Mato seihei no")
-        .sortingMethod("followedCount")
-        .sortingOrder("desc")
-        .comicAmount(10)
-        .offsetAmount(10)
-        .includedTags(listOf(GenreTag.COMEDY))
-        .excludedTags(listOf(ThemeTag.MONSTERS))
-        .build()
-
-    val urlString = query.toUrlString()
-    println(urlString)
-
-    val comicList = getComicList(
-        query
-    )
-
-    for (comic in comicList) {
-        println(comic.attributes.title)
-        println(comic.tags)
-    }
 }

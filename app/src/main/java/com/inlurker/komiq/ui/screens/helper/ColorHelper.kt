@@ -1,7 +1,6 @@
 package com.inlurker.komiq.ui.screens.helper
 
 
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -15,6 +14,6 @@ fun adjustLuminance(baseColor: Color, luminance: Float): Color {
     return Color(rgb)
 }
 
-fun generateColorPalette(context: Context, imageBitmap: Bitmap): Palette? {
-    return Palette.Builder(imageBitmap).generate()
+fun generateColorPalette(bitmap: Bitmap): Palette {
+    return Palette.Builder(bitmap).generate()
 }

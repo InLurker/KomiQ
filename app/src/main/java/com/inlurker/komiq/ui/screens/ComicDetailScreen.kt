@@ -2,7 +2,6 @@ package com.inlurker.komiq.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -64,8 +63,7 @@ import androidx.compose.ui.zIndex
 import androidx.palette.graphics.Palette
 import com.inlurker.komiq.R
 import com.inlurker.komiq.model.data.Comic
-import com.inlurker.komiq.model.mangadexapi.builder.ComicSearchQuery
-import com.inlurker.komiq.model.mangadexapi.getComicList
+import com.inlurker.komiq.model.mangadexapi.getComic
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
@@ -75,20 +73,18 @@ import com.inlurker.komiq.ui.screens.helper.generateColorPalette
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComicDetailScreen(comic: Comic) {
     val context = LocalContext.current
 
-    val topAppBarState = rememberTopAppBarState()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
     val viewModel = ComicDetailViewModel(comic)
 
-    val chapterPreview = viewModel.chapterPreview
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
-    val genreList = viewModel.genreList
 
     var coverBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var paletteState by remember { mutableStateOf<Palette?>(null) }
@@ -104,15 +100,14 @@ fun ComicDetailScreen(comic: Comic) {
 
     val placeholderBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.cover_placeholder)
 
-    LoadImageFromUrl(viewModel.comicCoverUrl) { bitmap ->
+    LoadImageFromUrl(context, comic.id, comic.cover) { bitmap ->
         coverBitmap = bitmap
-        val colorPalette = generateColorPalette(context, bitmap) // Use the temporary variable
+        val colorPalette = generateColorPalette(bitmap)
         paletteState = colorPalette
     }
 
     if (coverBitmap != null) {
-        val colorPalette = paletteState
-        val vibrantSwatch = colorPalette?.vibrantSwatch
+        val vibrantSwatch = paletteState?.vibrantSwatch
 
         vibrantColor = vibrantSwatch?.let { Color(it.rgb) } ?: primaryMaterialColor
 
@@ -129,6 +124,10 @@ fun ComicDetailScreen(comic: Comic) {
             } else {
                 onPrimaryMaterialContainerColor
             }
+    }
+
+    val chapterList = remember {
+        viewModel.chapterList
     }
 
     Scaffold(
@@ -201,7 +200,11 @@ fun ComicDetailScreen(comic: Comic) {
                                     .padding(top = 10.dp)
                             ) {
                                 Text(
-                                    text = "2017, Ongoing",
+                                    text = "${viewModel.comic.attributes.year}, ${viewModel.comic.attributes.status.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase(
+                                            Locale.ROOT
+                                        ) else it.toString()
+                                    }}",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Normal,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -210,7 +213,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 )
 
                                 Text(
-                                    text = "Kusuriya no Hitorigoto",
+                                    text = viewModel.comic.attributes.title,
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Medium,
                                     overflow = TextOverflow.Ellipsis,
@@ -218,7 +221,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 )
 
                                 Text(
-                                    text = "The Apothecary Diaries",
+                                    text = viewModel.comic.attributes.altTitle,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Normal,
                                     overflow = TextOverflow.Ellipsis,
@@ -237,7 +240,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 )
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Text(
-                                    text = "Hyuuga Natsu, Nanao Ikki, Nekokurage",
+                                    text = viewModel.comic.authors.joinToString(", "),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Normal,
@@ -297,8 +300,8 @@ fun ComicDetailScreen(comic: Comic) {
             }
             item {
                 CollapsibleDescriptionComponent(
-                    description = "Maomao, a young woman trained in the art of herbal medicine, is forced to work as a lowly servant in the inner palace. Though she yearns for life outside its perfumed halls, she isn’t long for a life of drudgery! Using her wits to break a “curse” afflicting the imperial heirs, Maomao attracts the attentions of the handsome eunuch Jinshi and is promoted to attendant food taster. But Jinshi has other plans for the erstwhile apothecary, and soon Maomao is back to brewing potions and…solving mysteries?!",
-                    genreList = genreList,
+                    description = viewModel.comic.attributes.description,
+                    genreList = viewModel.genreList,
                     genreTagColor = secondaryVibrantColor,
                     collapseTextButtonColor = vibrantColor,
                     modifier = Modifier
@@ -309,9 +312,6 @@ fun ComicDetailScreen(comic: Comic) {
                 Button(
                     onClick = {
                         /* TODO */
-
-
-                        Toast.makeText(context, viewModel.comicCoverUrl,Toast.LENGTH_LONG).show()
                     },
                     colors = ButtonDefaults.buttonColors(vibrantColor),
                     modifier = Modifier
@@ -357,18 +357,19 @@ fun ComicDetailScreen(comic: Comic) {
                         color = MaterialTheme.colorScheme.onSurface,
                         thickness = 1.dp
                     )
-                    chapterPreview?.let { chapter ->
-                        for (i in 1..23) {
-                            ChapterListElement(
-                                chapterPreview = chapterPreview,
-                                backgroundColor = secondaryVibrantColor,
-                                onClick = { /* TODO */ }
-                            )
-                            Divider(
-                                color = Color.LightGray,
-                                thickness = 1.dp
-                            )
-                        }
+                    chapterList.forEach { chapter ->
+                        ChapterListElement(
+                            volumeNumber = chapter.attributes.volume ?: 0,
+                            chapterNumber = chapter.attributes.chapter,
+                            chapterName = chapter.attributes.title,
+                            uploadDate = chapter.attributes.publishAt,
+                            backgroundColor = secondaryVibrantColor,
+                            onClick = { /* TODO */ }
+                        )
+                        Divider(
+                            color = Color.LightGray,
+                            thickness = 1.dp
+                        )
                     }
                 }
             }
@@ -376,35 +377,18 @@ fun ComicDetailScreen(comic: Comic) {
     }
 }
 
-
-
-data class MangaChapterPreview(
-    val volumeNumber: Int,
-    val chapterNumber: Int,
-    val chapterName: String,
-    val uploadDate: Date,
-    val scanlationGroup: String
-)
-
 @Preview
 @Composable
 fun MangaDetailScreenPreview() {
-    var comicList by remember { mutableStateOf(emptyList<Comic>()) }
+    var comic by remember { mutableStateOf<Comic?>(null) }
 
     LaunchedEffect(true) {
         withContext(Dispatchers.IO) {
-            val query = ComicSearchQuery.Builder()
-                .searchQuery("Mato seihei no")
-                .sortingMethod("followedCount")
-                .sortingOrder("desc")
-                .comicAmount(10)
-                .build()
-
-            comicList = getComicList(query)
+            comic = getComic("e1e38166-20e4-4468-9370-187f985c550e")
         }
     }
 
-    if (comicList.isNotEmpty()) {
-        ComicDetailScreen(comicList.first())
+    if(comic != null) {
+        ComicDetailScreen(comic!!)
     }
 }

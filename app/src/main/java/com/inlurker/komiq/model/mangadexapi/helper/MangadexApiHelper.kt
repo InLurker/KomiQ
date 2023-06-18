@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.mangadexapihelper
+package com.inlurker.komiq.model.mangadexapi.helper
 
 import okhttp3.Call
 import okhttp3.Callback
@@ -7,7 +7,7 @@ import okhttp3.Request
 import okhttp3.Response
 import java.util.concurrent.TimeUnit
 
-class MangaDexApiHelper {
+object MangaDexApiHelper {
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
@@ -49,15 +49,5 @@ class MangaDexApiHelper {
                 processRequestQueue(callback)
             }
         })
-    }
-
-    companion object {
-        private var instance: MangaDexApiHelper? = null
-        fun getInstance(): MangaDexApiHelper {
-            if (instance == null) {
-                instance = MangaDexApiHelper()
-            }
-            return instance!!
-        }
     }
 }
