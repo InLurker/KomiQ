@@ -17,7 +17,7 @@ class ComicSearchQuery private constructor(
         private var searchQuery: String = ""
         private var sortingMethod: String = MangaOrderOptions.RELEVANCE
         private var sortingOrder: String = SortingOrder.DESC
-        private var comicAmount: Int = 30
+        private var comicAmount: Int = 50
         private var offsetAmount: Int = 0
         private var includedTags: List<String> = emptyList()
         private var excludedTags: List<String> = emptyList()

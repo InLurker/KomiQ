@@ -23,7 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.inlurker.komiq.ui.screens.helper.formatDate
 import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,21 +33,23 @@ fun ChapterListElement(
     volumeNumber: Int,
     chapterNumber: Float,
     chapterName: String,
-    uploadDate: String,
+    uploadDate: LocalDateTime,
+    scanlationGroup: String,
     backgroundColor: Color,
     onClick: () -> Unit
 ) {
 
     val chapterDetails = buildAnnotatedString {
         if (volumeNumber != 0) {
-            append("Vol $volumeNumber. ")
+            append("Vol. $volumeNumber ")
         }
         append("Chapter ${removeTrailingZero(chapterNumber)} - ")
         append(chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
     }
 
     val chapterSourceInfo = buildAnnotatedString {
-        append(uploadDate)
+        append("${formatDate(uploadDate)} • ")
+        append(scanlationGroup.takeIf { it.isNotEmpty() } ?: "Unknown")
     }
 
     CompositionLocalProvider(
@@ -69,7 +73,7 @@ fun ChapterListElement(
             ) {
                 Text(
                     text = chapterDetails,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -78,7 +82,7 @@ fun ChapterListElement(
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = chapterSourceInfo,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

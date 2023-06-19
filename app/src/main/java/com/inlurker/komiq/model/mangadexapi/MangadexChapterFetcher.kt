@@ -1,8 +1,9 @@
 package com.inlurker.komiq.model.mangadexapi
 
-import com.inlurker.komiq.model.mangadexapi.adapters.Chapter
+import com.inlurker.komiq.model.data.Chapter
 import com.inlurker.komiq.model.mangadexapi.adapters.MangaChapterListResponse
 import com.inlurker.komiq.model.mangadexapi.helper.performMangadexApiRequest
+import com.inlurker.komiq.model.mangadexapi.parsers.mangadexChapterAdapterToChapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.runBlocking
@@ -15,7 +16,7 @@ get manga chapter list https://api.mangadex.org/manga/$comicid/feed?translatedLa
 example url: https://api.mangadex.org/manga/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370/feed?translatedLanguage[]=en
 */
 
-suspend fun getMangaChapterList(comicId: String): List<Chapter> {
+suspend fun getComicChapterList(comicId: String): List<Chapter> {
     val url = "https://api.mangadex.org/manga/$comicId/feed?"
     val request = Request.Builder()
         .url(url)
@@ -33,9 +34,11 @@ suspend fun getMangaChapterList(comicId: String): List<Chapter> {
 
     do {
         val urlWithQueryParams = url.toHttpUrlOrNull()!!.newBuilder()
-            .addQueryParameter("translatedLanguage[]", "en")
             .addQueryParameter("limit", limit.toString())
             .addQueryParameter("offset", offset.toString())
+            .addQueryParameter("order[chapter]=", "desc")
+            .addQueryParameter("translatedLanguage[]", "en")
+            .addQueryParameter("includes[]", "scanlation_group")
             .build()
 
         val requestWithQueryParams = request.newBuilder()
@@ -45,17 +48,16 @@ suspend fun getMangaChapterList(comicId: String): List<Chapter> {
         val response = performMangadexApiRequest(requestWithQueryParams, adapter)
         response?.let { mangaChaptersResponse ->
             val chapters = mangaChaptersResponse.data
-            // Process chapters here or store them in a list
-            chapterList.addAll(chapters)
-            total = mangaChaptersResponse.total
+            val parsedChapters = mangadexChapterAdapterToChapter(chapters)
+            chapterList.addAll(parsedChapters)
 
+            total = mangaChaptersResponse.total
             offset += limit
         }
     } while (offset < total)
 
     return chapterList
 }
-
 
 
 // get chapter pages (filenames) https://api.mangadex.org/at-home/server/$comicId
@@ -69,16 +71,17 @@ suspend fun getMangaChapterList(comicId: String): List<Chapter> {
 
 
 fun main() {
-    val comicId = "a3f91d0b-02f5-4a3d-a2d0-f0bde7152370"
+    val comicId = "03426dd2-63c5-493e-853e-485d7c7dc9c0"
     val chapterList: List<Chapter>
     runBlocking {
-        chapterList = getMangaChapterList(comicId)
+        chapterList = getComicChapterList(comicId)
     }
     for ((index, chapter) in chapterList.withIndex()) {
         println(index)
-        println("Vol ${chapter.attributes.volume} Ch. ${chapter.attributes.chapter}")
+        println("Vol ${chapter.volume} Ch. ${chapter.chapter}")
         println("Chapter ID: ${chapter.id}")
-        println("Title: ${chapter.attributes.title}")
+        println("Title: ${chapter.title}")
+        println("Scan: ${chapter.scanlationGroup}")
         println()
     }
 }

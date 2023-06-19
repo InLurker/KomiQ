@@ -4,30 +4,30 @@ import com.squareup.moshi.JsonClass
 
 
 @JsonClass(generateAdapter = true)
-data class Chapter(
+data class MangadexChapterAdapter(
     val id: String,
     val type: String,
-    val attributes: ChapterAttributes
+    val attributes: MangadexChapterAttributesAdapter,
+    val relationships: List<MangadexChapterRelationshipsAdapter>
 )
 
 @JsonClass(generateAdapter = true)
-data class ChapterAttributes(
+data class MangadexChapterAttributesAdapter(
     val volume: Int?,
     val chapter: Float,
     val title: String,
     val publishAt: String,
-    val readableAt: String,
-    val createdAt: String,
-    val updatedAt: String,
     val pages: Int
 )
 
 @JsonClass(generateAdapter = true)
-data class MangaChapterListResponse(
-    val result: String,
-    val response: String,
-    val data: List<Chapter>,
-    val limit: Int,
-    val offset: Int,
-    val total: Int
+data class MangadexChapterRelationshipsAdapter(
+    val type: String,
+    val attributes: MangadexChapterRelationshipsAttributesAdapter?
+)
+
+
+@JsonClass(generateAdapter = true)
+data class MangadexChapterRelationshipsAttributesAdapter(
+    val name: String //this will be scanlation group name
 )

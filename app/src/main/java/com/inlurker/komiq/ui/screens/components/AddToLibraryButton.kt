@@ -100,8 +100,7 @@ fun AddToLibraryButton(
                 Text(
                     text = buttonText,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 9.sp,
-                    lineHeight = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 0.1.sp,
                     modifier = Modifier
                         .align(Alignment.CenterVertically)

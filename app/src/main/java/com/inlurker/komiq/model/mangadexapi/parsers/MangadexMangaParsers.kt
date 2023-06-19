@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.helper
+package com.inlurker.komiq.model.mangadexapi.parsers
 
 
 import com.inlurker.komiq.model.data.Attributes

@@ -50,17 +50,3 @@ data class MangadexRelationshipAttributesAdapter(
     val name: String?,
     val fileName: String?
 )
-
-@JsonClass(generateAdapter = true)
-data class MangadexMangaResponse(
-    val result: String,
-    val response: String,
-    val data: MangadexDataAdapter?
-)
-
-@JsonClass(generateAdapter = true)
-data class MangadexMangaListResponse(
-    val result: String,
-    val response: String,
-    val data: List<MangadexDataAdapter>?
-)

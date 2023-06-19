@@ -1,7 +1,5 @@
 package com.inlurker.komiq.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -26,6 +24,7 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -58,21 +57,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
-import com.inlurker.komiq.R
+import coil.compose.rememberAsyncImagePainter
+import com.inlurker.komiq.model.data.Chapter
 import com.inlurker.komiq.model.data.Comic
 import com.inlurker.komiq.model.mangadexapi.getComic
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
-import com.inlurker.komiq.ui.screens.helper.LoadImageFromUrl
 import com.inlurker.komiq.ui.screens.helper.adjustLuminance
 import com.inlurker.komiq.ui.screens.helper.generateColorPalette
+import com.inlurker.komiq.ui.screens.helper.loadImageFromUrl
+import com.inlurker.komiq.ui.screens.helper.pluralize
+import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,8 +89,6 @@ fun ComicDetailScreen(comic: Comic) {
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
-
-    var coverBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var paletteState by remember { mutableStateOf<Palette?>(null) }
 
     val primaryMaterialColor = MaterialTheme.colorScheme.primary
@@ -98,37 +100,47 @@ fun ComicDetailScreen(comic: Comic) {
     var secondaryVibrantColor by remember { mutableStateOf(secondaryMaterialContainerColor) }
     var topAppBarIconButtonColor by remember { mutableStateOf(onPrimaryMaterialContainerColor) }
 
-    val placeholderBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.cover_placeholder)
 
-    LoadImageFromUrl(context, comic.id, comic.cover) { bitmap ->
-        coverBitmap = bitmap
-        val colorPalette = generateColorPalette(bitmap)
-        paletteState = colorPalette
+    val coverArtImageRequest = loadImageFromUrl(context, comic.id, comic.cover)
+
+    val isDarkTheme = isSystemInDarkTheme()
+
+    val painter = rememberAsyncImagePainter(
+        coverArtImageRequest,
+        onSuccess = { state ->
+            // Perform actions with the loaded image's bitmap
+            val bitmap = state.result.drawable.toBitmap()
+            paletteState = generateColorPalette(bitmap)
+            val vibrantSwatch = paletteState?.vibrantSwatch
+
+            vibrantColor = vibrantSwatch?.let { Color(it.rgb) } ?: primaryMaterialColor
+
+            secondaryVibrantColor =
+                if (vibrantColor != Color.Black && vibrantColor != Color.White) {
+                    adjustLuminance(vibrantColor, if (isDarkTheme) 0.2f else 0.9f)
+                } else {
+                    secondaryMaterialContainerColor
+                }
+
+            topAppBarIconButtonColor =
+                if (vibrantColor != Color.Black && vibrantColor != Color.White) {
+                    adjustLuminance(vibrantColor, if (isDarkTheme) 0.8f else 0.3f)
+                } else {
+                    onPrimaryMaterialContainerColor
+                }
+        }
+    )
+
+
+    var chapterList by remember { mutableStateOf<List<Chapter>>(emptyList()) }
+    var totalChapters by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        val fetchedChapterList = viewModel.fetchChapterList()
+        chapterList = fetchedChapterList
+        totalChapters = fetchedChapterList.size
     }
 
-    if (coverBitmap != null) {
-        val vibrantSwatch = paletteState?.vibrantSwatch
-
-        vibrantColor = vibrantSwatch?.let { Color(it.rgb) } ?: primaryMaterialColor
-
-        secondaryVibrantColor =
-            if (vibrantColor != Color.Black && vibrantColor != Color.White) {
-                adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.2f else 0.9f)
-            } else {
-                secondaryMaterialContainerColor
-            }
-
-        topAppBarIconButtonColor =
-            if (vibrantColor != Color.Black && vibrantColor != Color.White) {
-                adjustLuminance(vibrantColor, if (isSystemInDarkTheme()) 0.8f else 0.3f)
-            } else {
-                onPrimaryMaterialContainerColor
-            }
-    }
-
-    val chapterList = remember {
-        viewModel.chapterList
-    }
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("dd LLLL yyyy")
 
     Scaffold(
         topBar = {
@@ -185,7 +197,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 .height(180.dp)
                         ) {
                             Image(
-                                bitmap = coverBitmap?.asImageBitmap() ?: placeholderBitmap.asImageBitmap(),
+                                painter,
                                 contentDescription = "cover",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -200,11 +212,13 @@ fun ComicDetailScreen(comic: Comic) {
                                     .padding(top = 10.dp)
                             ) {
                                 Text(
-                                    text = "${viewModel.comic.attributes.year}, ${viewModel.comic.attributes.status.replaceFirstChar {
-                                        if (it.isLowerCase()) it.titlecase(
-                                            Locale.ROOT
-                                        ) else it.toString()
-                                    }}",
+                                    text = "${viewModel.comic.attributes.year}, ${
+                                        viewModel.comic.attributes.status.replaceFirstChar {
+                                            if (it.isLowerCase()) it.titlecase(
+                                                Locale.ROOT
+                                            ) else it.toString()
+                                        }
+                                    }",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Normal,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -242,7 +256,6 @@ fun ComicDetailScreen(comic: Comic) {
                                 Text(
                                     text = viewModel.comic.authors.joinToString(", "),
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.Normal,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurface,
@@ -272,7 +285,7 @@ fun ComicDetailScreen(comic: Comic) {
                             .zIndex(0f)
                     ) {
                         Image(
-                            bitmap = coverBitmap?.asImageBitmap() ?: placeholderBitmap.asImageBitmap(),
+                            painter,
                             contentDescription = "Blurred Cover",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -281,52 +294,42 @@ fun ComicDetailScreen(comic: Comic) {
                                 .alpha(0.5f)
                         )
                     }
-
-                    /*
-                    BlurredAsyncImage(
-                        context = context,
-                        imageUrl = imageUrl,
-                        contentDescription = "Blurred Cover",
-                        contentScale = ContentScale.Crop,
-                        blurRadius = 10f,
-                        modifier = Modifier
-                            .matchParentSize()
-                            .zIndex(0f)
-                            .background(dominantColor)
-                            .alpha(0.4f)
-                    )
-                     */
                 }
             }
             item {
                 CollapsibleDescriptionComponent(
                     description = viewModel.comic.attributes.description,
-                    genreList = viewModel.genreList,
+                    tagList = viewModel.genreList,
                     genreTagColor = secondaryVibrantColor,
                     collapseTextButtonColor = vibrantColor,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                 )
             }
-            item {
-                Button(
-                    onClick = {
-                        /* TODO */
-                    },
-                    colors = ButtonDefaults.buttonColors(vibrantColor),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth()
-                        .height(35.dp)
-                ) {
-                    Text(
-                        text = "Start Reading Chapter 1",
-                        style = MaterialTheme.typography.labelMedium
-                    )
+            if (chapterList.isNotEmpty()) {
+                item {
+                    Button(
+                        onClick = {
+                            /* TODO */
+                        },
+                        colors = ButtonDefaults.buttonColors(vibrantColor),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth()
+                            .height(35.dp)
+                    ) {
+                        Text(
+                            text = "Start Reading Chapter ${removeTrailingZero(chapterList.first().chapter)}",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                 }
             }
             item {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
                     Button(
                         onClick = { /*TODO*/ },
                         contentPadding = PaddingValues(0.dp),
@@ -339,7 +342,7 @@ fun ComicDetailScreen(comic: Comic) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "140 Chapters",
+                                text = pluralize(totalChapters, "Chapter"),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -357,23 +360,32 @@ fun ComicDetailScreen(comic: Comic) {
                         color = MaterialTheme.colorScheme.onSurface,
                         thickness = 1.dp
                     )
-                    chapterList.forEach { chapter ->
-                        ChapterListElement(
-                            volumeNumber = chapter.attributes.volume ?: 0,
-                            chapterNumber = chapter.attributes.chapter,
-                            chapterName = chapter.attributes.title,
-                            uploadDate = chapter.attributes.publishAt,
-                            backgroundColor = secondaryVibrantColor,
-                            onClick = { /* TODO */ }
-                        )
-                        Divider(
-                            color = Color.LightGray,
-                            thickness = 1.dp
+                    if (chapterList.isNotEmpty()) {
+                        chapterList.forEach { chapter ->
+                            ChapterListElement(
+                                volumeNumber = chapter.volume ?: 0,
+                                chapterNumber = chapter.chapter,
+                                chapterName = chapter.title,
+                                uploadDate = chapter.publishAt,
+                                scanlationGroup = chapter.scanlationGroup,
+                                backgroundColor = secondaryVibrantColor,
+                                onClick = { /* TODO */ }
+                            )
+                            Divider(
+                                color = Color.Gray,
+                                thickness = 1.dp
+                            )
+                        }
+                    } else {
+                        CircularProgressIndicator(
+                            color = secondaryVibrantColor,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 }
             }
         }
+
     }
 }
 
@@ -381,14 +393,66 @@ fun ComicDetailScreen(comic: Comic) {
 @Composable
 fun MangaDetailScreenPreview() {
     var comic by remember { mutableStateOf<Comic?>(null) }
+    //gorilla: a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+    //mato: e1e38166-20e4-4468-9370-187f985c550e
+    //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579
+    DisposableEffect(true) {
+        val job = CoroutineScope(Dispatchers.IO).launch {
+            comic = getComic("36d27f1d-122a-4c7e-9001-a0d62c8fb579")
+        }
 
-    LaunchedEffect(true) {
-        withContext(Dispatchers.IO) {
-            comic = getComic("e1e38166-20e4-4468-9370-187f985c550e")
+        onDispose {
+            job.cancel()
         }
     }
 
-    if(comic != null) {
+    if (comic != null) {
+        print(comic)
         ComicDetailScreen(comic!!)
+    } else {
+        // Show a loading indicator or handle the case when the comic is null
+        Text(text = "Loading...")
     }
 }
+    /*
+    ComicDetailScreen(
+        comic = Comic(
+            id = "03426dd2-63c5-493e-853e-485d7c7dc9c0",
+            type = "manga",
+            attributes = Attributes(
+                title = "Kono Subarashii Sekai ni Nichijou wo !",
+                altTitle = "Everyday Life in This Wonderful World !",
+                description = """
+                    Spinoff of the KonoSuba series, featuring the daily life of Kazuma and Co .
+                """.trimIndent(),
+                originalLanguage = "ja",
+                publicationDemographic = "shounen",
+                status = "completed",
+                year = 2016,
+                contentRating = "safe",
+                addedAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(), lastReadChaper = 0
+            ),
+            authors = listOf("Akatsuki Natsume", "Somemiya Suzume"),
+            tags = listOf(
+                Tag(name = "Reincarnation", group = "theme"),
+                Tag(name = "Monsters", group = "theme"),
+                Tag(name = "Action", group = "genre"),
+                Tag(name = "Demons", group = "theme"),
+                Tag(name = "Animals", group = "theme"),
+                Tag(name = "Romance", group = "genre"),
+                Tag(name = "Comedy", group = "genre"),
+                Tag(name = "Adventure", group = "genre"),
+                Tag(name = "Magic", group = "theme"),
+                Tag(name = "Harem", group = "theme"),
+                Tag(name = "Isekai", group = "genre"),
+                Tag(name = "Fantasy", group = "genre"),
+                Tag(name = "Monster Girls", group = "theme"),
+                Tag(name = "Slice of Life", group = "genre"),
+                Tag(name = "Supernatural", group = "theme")
+            ),
+            cover = "c9ff96db-c443-4d93-8c14-2c6540b9f249.jpg",
+            isInLibrary = false
+        )
+    )
+     */

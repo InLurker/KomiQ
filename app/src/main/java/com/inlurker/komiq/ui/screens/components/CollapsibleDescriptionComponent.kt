@@ -47,13 +47,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.inlurker.komiq.model.data.Tag
 
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CollapsibleDescriptionComponent(
     description: String,
-    genreList: List<String>,
+    tagList: List<Tag>,
     genreTagColor: Color,
     collapseTextButtonColor: Color,
     modifier: Modifier = Modifier
@@ -102,11 +103,11 @@ fun CollapsibleDescriptionComponent(
 
         Text(
             text = description,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
-            lineHeight = 13.sp,
-            letterSpacing = 0.15.sp,
+            lineHeight = 15.sp,
+            letterSpacing = 0.2.sp,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = if (isExpanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
@@ -120,7 +121,7 @@ fun CollapsibleDescriptionComponent(
             exit = collapseTransition
         ) {
             Column {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 FlowRow(
                     verticalAlignment = Alignment.CenterVertically,
@@ -129,9 +130,9 @@ fun CollapsibleDescriptionComponent(
                         .wrapContentWidth(Alignment.Start)
                         .clipToBounds()
                 ) {
-                    for (genre in genreList) {
-                        GenreTags(
-                            text = genre,
+                    tagList.forEach { tag ->
+                        ComicTags(
+                            text = tag.name,
                             backgroundColor = genreTagColor
                         )
                     }

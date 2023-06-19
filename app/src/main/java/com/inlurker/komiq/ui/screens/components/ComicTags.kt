@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GenreTags(
+fun ComicTags(
     text: String,
     backgroundColor: Color
 ) {
