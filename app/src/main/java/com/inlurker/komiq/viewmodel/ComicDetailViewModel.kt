@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.inlurker.komiq.model.data.Comic
-import com.inlurker.komiq.model.mangadexapi.getComicChapterList
+import com.inlurker.komiq.model.data.repository.ComicRepository
 
 
 class ComicDetailViewModel(
@@ -23,7 +23,7 @@ class ComicDetailViewModel(
 
 
     suspend fun fetchChapterList() =
-        getComicChapterList(comic.id)
+        ComicRepository.getComicChapterList(comic.id)
 
     fun toggleComicInLibrary(boolean: Boolean) {
         isComicInLibrary = boolean

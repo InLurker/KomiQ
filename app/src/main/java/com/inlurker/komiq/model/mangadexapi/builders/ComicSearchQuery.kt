@@ -3,21 +3,20 @@ package com.inlurker.komiq.model.mangadexapi.builders
 import com.inlurker.komiq.model.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.mangadexapi.constants.SortingOrder
 
-
 class ComicSearchQuery private constructor(
-    val searchQuery: String,
-    val sortingMethod: String,
-    val sortingOrder: String,
-    val comicAmount: Int,
-    val offsetAmount: Int,
-    val includedTags: List<String>,
-    val excludedTags: List<String>
+    var searchQuery: String,
+    var sortingMethod: String,
+    var sortingOrder: String,
+    var comicAmount: Int,
+    var offsetAmount: Int,
+    var includedTags: List<String>,
+    var excludedTags: List<String>
 ) {
     class Builder {
         private var searchQuery: String = ""
         private var sortingMethod: String = MangaOrderOptions.RELEVANCE
         private var sortingOrder: String = SortingOrder.DESC
-        private var comicAmount: Int = 50
+        private var comicAmount: Int = 30
         private var offsetAmount: Int = 0
         private var includedTags: List<String> = emptyList()
         private var excludedTags: List<String> = emptyList()
@@ -66,5 +65,53 @@ class ComicSearchQuery private constructor(
         val queryString = queryParams.joinToString("&")
 
         return "$baseUrl?$queryString"
+    }
+
+    // Setters
+    internal fun setSearchQuery(searchQuery: String) {
+        this.searchQuery = searchQuery
+    }
+
+    internal fun setSortingMethod(sortingMethod: String) {
+        this.sortingMethod = sortingMethod
+    }
+
+    internal fun setSortingOrder(sortingOrder: String) {
+        this.sortingOrder = sortingOrder
+    }
+
+    internal fun setComicAmount(comicAmount: Int) {
+        this.comicAmount = comicAmount
+    }
+
+    internal fun setOffsetAmount(offsetAmount: Int) {
+        this.offsetAmount = offsetAmount
+    }
+
+    internal fun setIncludedTags(includedTags: List<String>) {
+        this.includedTags = includedTags
+    }
+
+    internal fun setExcludedTags(excludedTags: List<String>) {
+        this.excludedTags = excludedTags
+    }// Copy function
+    fun copy(
+        searchQuery: String? = null,
+        sortingMethod: String? = null,
+        sortingOrder: String? = null,
+        comicAmount: Int? = null,
+        offsetAmount: Int? = null,
+        includedTags: List<String>? = null,
+        excludedTags: List<String>? = null
+    ): ComicSearchQuery {
+        return ComicSearchQuery(
+            searchQuery ?: this.searchQuery,
+            sortingMethod ?: this.sortingMethod,
+            sortingOrder ?: this.sortingOrder,
+            comicAmount ?: this.comicAmount,
+            offsetAmount ?: this.offsetAmount,
+            includedTags ?: this.includedTags,
+            excludedTags ?: this.excludedTags
+        )
     }
 }

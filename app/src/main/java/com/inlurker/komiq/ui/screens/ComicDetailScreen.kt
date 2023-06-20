@@ -63,7 +63,7 @@ import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.Chapter
 import com.inlurker.komiq.model.data.Comic
-import com.inlurker.komiq.model.mangadexapi.getComic
+import com.inlurker.komiq.model.data.repository.ComicRepository.getComic
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
@@ -76,7 +76,6 @@ import com.inlurker.komiq.viewmodel.ComicDetailViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +106,7 @@ fun ComicDetailScreen(comic: Comic) {
 
     val painter = rememberAsyncImagePainter(
         coverArtImageRequest,
+        contentScale = ContentScale.Crop,
         onSuccess = { state ->
             // Perform actions with the loaded image's bitmap
             val bitmap = state.result.drawable.toBitmap()
@@ -139,8 +139,6 @@ fun ComicDetailScreen(comic: Comic) {
         chapterList = fetchedChapterList
         totalChapters = fetchedChapterList.size
     }
-
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("dd LLLL yyyy")
 
     Scaffold(
         topBar = {
@@ -212,8 +210,8 @@ fun ComicDetailScreen(comic: Comic) {
                                     .padding(top = 10.dp)
                             ) {
                                 Text(
-                                    text = "${viewModel.comic.attributes.year}, ${
-                                        viewModel.comic.attributes.status.replaceFirstChar {
+                                    text = "${viewModel.comic.year}, ${
+                                        viewModel.comic.status.replaceFirstChar {
                                             if (it.isLowerCase()) it.titlecase(
                                                 Locale.ROOT
                                             ) else it.toString()
@@ -227,7 +225,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 )
 
                                 Text(
-                                    text = viewModel.comic.attributes.title,
+                                    text = viewModel.comic.title,
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Medium,
                                     overflow = TextOverflow.Ellipsis,
@@ -235,7 +233,7 @@ fun ComicDetailScreen(comic: Comic) {
                                 )
 
                                 Text(
-                                    text = viewModel.comic.attributes.altTitle,
+                                    text = viewModel.comic.altTitle,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Normal,
                                     overflow = TextOverflow.Ellipsis,
@@ -298,7 +296,7 @@ fun ComicDetailScreen(comic: Comic) {
             }
             item {
                 CollapsibleDescriptionComponent(
-                    description = viewModel.comic.attributes.description,
+                    description = viewModel.comic.description,
                     tagList = viewModel.genreList,
                     genreTagColor = secondaryVibrantColor,
                     collapseTextButtonColor = vibrantColor,
@@ -384,8 +382,10 @@ fun ComicDetailScreen(comic: Comic) {
                     }
                 }
             }
+            item {
+                Spacer(modifier = Modifier.height(100.dp))
+            }
         }
-
     }
 }
 
@@ -398,7 +398,7 @@ fun MangaDetailScreenPreview() {
     //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579
     DisposableEffect(true) {
         val job = CoroutineScope(Dispatchers.IO).launch {
-            comic = getComic("36d27f1d-122a-4c7e-9001-a0d62c8fb579")
+            comic = getComic("e1e38166-20e4-4468-9370-187f985c550e")
         }
 
         onDispose {

@@ -1,14 +1,13 @@
 package com.inlurker.komiq.ui.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
@@ -21,34 +20,47 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
+import com.inlurker.komiq.ui.screens.components.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
+import com.inlurker.komiq.viewmodel.DiscoverViewModel
+import com.inlurker.komiq.viewmodel.paging.ListState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun DiscoverScreen() {
-
-
+    val context = LocalContext.current
+    val viewModel: DiscoverViewModel = viewModel()
     val sortingMethods = listOf("Last Updated", "Date Added")
 
-    var searchQuery by remember { mutableStateOf("") }
-    var searchedAction by remember { mutableStateOf(false) }
-    var searchHint by remember { mutableStateOf("Search comic") }
-
-
+    val searchQueryState = remember { mutableStateOf("") }
+    val searchedActionState = remember { mutableStateOf(false) }
+    val searchHintState = remember { mutableStateOf("Search comic") }
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+
+    val lazyGridScrollState = rememberLazyGridState()
+
+    LaunchedEffect(lazyGridScrollState) {
+        val totalItemsCount = viewModel.comicList.size
+        val lastVisibleItemIndex = lazyGridScrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 10
+
+        if (nearEndOfList) {
+            viewModel.loadNextPage()
+        }
+    }
 
 
     Scaffold(
@@ -68,20 +80,21 @@ fun DiscoverScreen() {
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
+            state = lazyGridScrollState,
             modifier = Modifier
                 .padding(paddingValue)
                 .padding(horizontal = 16.dp)
         ) {
             item(span = { GridItemSpan(3) }) {
                 DockedSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { query -> searchQuery = query }, // Update the search query
-                    onSearch = { searchedAction = true },
+                    query = searchQueryState.value,
+                    onQueryChange = { query -> searchQueryState.value = query },
+                    onSearch = { searchedActionState.value = true },
                     active = false,
-                    onActiveChange = { }, // Update the search activation
-                    placeholder = { Text(searchHint) },
+                    onActiveChange = { },
+                    placeholder = { Text(searchHintState.value) },
                     leadingIcon = {
-                        IconButton(onClick = { searchedAction = true }) {
+                        IconButton(onClick = { searchedActionState.value = true }) {
                             Icon(
                                 Icons.Default.Search,
                                 contentDescription = null,
@@ -95,23 +108,44 @@ fun DiscoverScreen() {
                 SortingToolbar(
                     sortingMethods = sortingMethods,
                     onSortingMethodSelected = { index, sortingMethod ->
-
+                        // TODO: Implement sorting
                     },
                     onAscendingClicked = {
-
+                        // TODO: Implement ascending sorting
                     },
                     onFilterClicked = {
-
+                        // TODO: Implement filtering
                     }
                 )
             }
-            item(span = { GridItemSpan(3) }) {
-                Spacer(modifier = Modifier.height(160.dp))
+
+            // Comic list
+            itemsIndexed(viewModel.comicList) { index, comic ->
+                ComicCollectionComponent(comic = comic)
+                // Trigger pagination when reaching the end of the list
+                if (index == viewModel.comicList.size - 3) {
+                    viewModel.loadNextPage()
+                }
+            }
+            // Pagination progress indicator
+            when (viewModel.listState) {
+                ListState.LOADING -> {
+                    item {
+                        ComicCollectionPlaceholder()
+                    }
+                }
+                ListState.ERROR -> {
+                    item(span = { GridItemSpan(3) }) {
+                        Text("An unknown error occured.")
+                    }
+                }
+                else -> Unit
             }
         }
     }
-
 }
+
+
 
 @Preview(showBackground = true)
 @Composable

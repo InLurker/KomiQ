@@ -1,7 +1,6 @@
 package com.inlurker.komiq.model.mangadexapi.parsers
 
 
-import com.inlurker.komiq.model.data.Attributes
 import com.inlurker.komiq.model.data.Comic
 import com.inlurker.komiq.model.data.Tag
 import com.inlurker.komiq.model.mangadexapi.adapters.MangadexDataAdapter
@@ -11,7 +10,7 @@ import java.time.format.DateTimeFormatter
 fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     val attributes = data.attributes
 
-    val title = attributes.title.values.firstOrNull()!!
+    val title = attributes.title.values.firstOrNull() ?: "No Comic Title"
 
     // Parse altTitle
     val altTitle = findAltTitle(title, attributes.altTitles)
@@ -21,7 +20,7 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     val tagList = mutableListOf<Tag>()
 
     attributes.tags.forEach { tagEntry ->
-        tagEntry.attributes.name["en"]?.let { name ->
+        tagEntry.attributes.name.get("en")?.let { name ->
             tagList.add(
                 Tag(
                     name = name,
@@ -32,16 +31,15 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     }
 
     val authorList = mutableListOf<String>()
-    var coverFileName = String()
+    var coverFileName = ""
     data.relationships.forEach { relationship ->
-        if (relationship.type == "cover_art") {
-            relationship.attributes?.let {
-                coverFileName = it.fileName?:""
+        when (relationship.type) {
+            "cover_art" -> relationship.attributes?.fileName?.let {
+                coverFileName = it
             }
-        } else if (relationship.type == "author" || relationship.type == "artist")  {
-            relationship.attributes?.let {
-                if(it.name != null && !authorList.contains(it.name)) {
-                    authorList.add(it.name)
+            "author", "artist" -> relationship.attributes?.name?.let {
+                if (it.isNotEmpty() && !authorList.contains(it)) {
+                    authorList.add(it)
                 }
             }
         }
@@ -50,19 +48,16 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     return Comic(
         id = data.id,
         type = data.type,
-        attributes = Attributes(
-            title = attributes.title.values.firstOrNull()!!,
-            altTitle = altTitle,
-            description = description,
-            originalLanguage = attributes.originalLanguage ?: "unknown",
-            publicationDemographic = attributes.publicationDemographic,
-            status = attributes.status ?: "unknown",
-            year = attributes.year ?: 0,
-            contentRating = attributes.contentRating ?: "unknown",
-            addedAt = LocalDateTime.parse(attributes.createdAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            updatedAt = LocalDateTime.parse(attributes.updatedAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            lastReadChaper = 0
-        ),
+        title = title,
+        altTitle = altTitle,
+        description = description,
+        originalLanguage = attributes.originalLanguage ?: "unknown",
+        publicationDemographic = attributes.publicationDemographic ?: "",
+        status = attributes.status ?: "unknown",
+        year = attributes.year ?: 0,
+        contentRating = attributes.contentRating ?: "unknown",
+        addedAt = LocalDateTime.parse(attributes.createdAt ?: "", DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+        updatedAt = LocalDateTime.parse(attributes.updatedAt ?: "", DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         authors = authorList,
         tags = tagList,
         cover = coverFileName,
@@ -71,19 +66,25 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
 }
 
 private fun findAltTitle(title: String, altTitles: List<Map<String, String>>): String {
-    val englishAltTitles = altTitles.filter { it.containsKey("en") && it["en"] != title }
-    val originalLanguageAltTitle = altTitles.find { it.containsKey("en") && it["en"] == title }
-    return if (englishAltTitles.isNotEmpty()) {
-        englishAltTitles[0]["en"] ?: title
-    } else {
-        originalLanguageAltTitle?.get(originalLanguageAltTitle["originalLanguage"]) ?: altTitles[0].values.first()
+    if (altTitles.isEmpty()) {
+        return "No alternative titles"
+    }
+
+    val englishAltTitles = altTitles.filter { it["en"] != title }
+    val originalLanguageAltTitle = altTitles.find { it["en"] == title }
+
+    return when {
+        englishAltTitles.isNotEmpty() -> englishAltTitles[0]["en"] ?: title
+        originalLanguageAltTitle != null -> originalLanguageAltTitle[originalLanguageAltTitle["originalLanguage"]] ?: "No alternative titles"
+        else -> "No alternative titles"
     }
 }
 
 private fun findDescription(description: Map<String, String>, altTitles: List<Map<String, String>>): String {
     val englishDescription = description["en"]
-    val originalLanguageDescription = description[description["originalLanguage"]]
-    return englishDescription ?: originalLanguageDescription ?: altTitles[0].values.first()
+    val originalLanguage = description["originalLanguage"]
+    val originalLanguageDescription = originalLanguage?.let { description[it] }
+    return englishDescription ?: originalLanguageDescription ?: altTitles.firstOrNull()?.values?.firstOrNull() ?: "No description available"
 }
 
 fun mangaListResponseToComicList(dataAdapterList: List<MangadexDataAdapter>): List<Comic> {

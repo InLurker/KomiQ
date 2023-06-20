@@ -7,15 +7,10 @@ import java.time.LocalDateTime
 data class Comic(
     val id: String,
     val type: String,
-    val attributes: Attributes,
     val authors: List<String>,
     val tags: List<Tag>,
     val cover: String,
     val isInLibrary: Boolean,
-)
-
-@Entity
-data class Attributes(
     val title: String,
     val altTitle: String,
     val description: String,
@@ -25,9 +20,9 @@ data class Attributes(
     val year: Int,
     val contentRating: String,
     val addedAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?,
-    val lastReadChaper: Int
+    val updatedAt: LocalDateTime?
 )
+
 
 @Entity
 data class Tag(
