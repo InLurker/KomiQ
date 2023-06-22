@@ -1,21 +1,15 @@
 package com.inlurker.komiq.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
@@ -33,78 +27,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.inlurker.komiq.R
-import com.inlurker.komiq.model.ComicPreviewModel
+import com.inlurker.komiq.ui.navigation.popUpToTop
+import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
+import com.inlurker.komiq.viewmodel.LibraryViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    navController: NavController = rememberNavController()
+    navController: NavController = rememberNavController(),
+    viewModel: LibraryViewModel = viewModel()
 ) {
-    var comicList = listOf(
-        ComicPreviewModel(
-            title = "Chainsaw Man",
-            author = listOf("Fujimoto Tatsuki")
-        ),
-        ComicPreviewModel(
-            title = "Kono Subarashii sekai ni shukufuku wo!",
-            author = listOf("Akatsuki Natsume", "Watari Masahito")
-        ),
-        ComicPreviewModel(
-            title = "Kusuriya no Hitorigoto",
-            author = listOf("Hyuuga Natsu", "Nanao Ikki", "Nekokurage")
-        ),
-        ComicPreviewModel(
-            title = "SPY x FAMILY",
-            author = listOf("Endou Tatsuya")
-        ),
-        ComicPreviewModel(
-            title = "Chainsaw Man",
-            author = listOf("Fujimoto Tatsuki")
-        ),
-        ComicPreviewModel(
-            title = "Kono Subarashii sekai ni shukufuku wo!",
-            author = listOf("Akatsuki Natsume", "Watari Masahito")
-        ),
-        ComicPreviewModel(
-            title = "Kusuriya no Hitorigoto",
-            author = listOf("Hyuuga Natsu", "Nanao Ikki", "Nekokurage")
-        ),
-        ComicPreviewModel(
-            title = "SPY x FAMILY",
-            author = listOf("Endou Tatsuya")
-        ),
-        ComicPreviewModel(
-            title = "Chainsaw Man",
-            author = listOf("Fujimoto Tatsuki")
-        ),
-        ComicPreviewModel(
-            title = "Kono Subarashii sekai ni shukufuku wo!",
-            author = listOf("Akatsuki Natsume", "Watari Masahito")
-        ),
-        ComicPreviewModel(
-            title = "Kusuriya no Hitorigoto",
-            author = listOf("Hyuuga Natsu", "Nanao Ikki", "Nekokurage")
-        ),
-        ComicPreviewModel(
-            title = "SPY x FAMILY",
-            author = listOf("Endou Tatsuya")
-        )
-    )
 
     val sortingMethods = listOf("Last Updated", "Date Added")
 
@@ -175,42 +116,15 @@ fun LibraryScreen(
                     }
                 )
             }
-            items(comicList) { item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Image(
-                        painterResource(id = R.drawable.spy),
-                        contentDescription = "cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(2f / 3f)
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outline,
-                                RoundedCornerShape(10.dp)
-                            )
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                    Text(
-                        text = item.title,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = item.author.joinToString(separator = ", "),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            items(viewModel.comics) { comic ->
+                ComicCollectionComponent(
+                    comic = comic,
+                    onClick = {
+                        navController.navigate("detail/${comic.id}") {
+                            popUpToTop(navController)
+                        }
+                    }
+                )
             }
             item(span = { GridItemSpan(3) }) {
                 Spacer(modifier = Modifier.height(160.dp))

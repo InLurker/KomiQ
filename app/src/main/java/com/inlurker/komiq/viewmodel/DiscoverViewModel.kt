@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.inlurker.komiq.model.data.Comic
+import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.model.mangadexapi.builders.ComicSearchQuery
 import com.inlurker.komiq.model.mangadexapi.constants.MangaOrderOptions

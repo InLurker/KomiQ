@@ -1,8 +1,8 @@
 package com.inlurker.komiq.model.mangadexapi.parsers
 
 
-import com.inlurker.komiq.model.data.Comic
-import com.inlurker.komiq.model.data.Tag
+import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.datamodel.Tag
 import com.inlurker.komiq.model.mangadexapi.adapters.MangadexDataAdapter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.data
+package com.inlurker.komiq.model.data.datamodel
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

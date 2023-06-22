@@ -1,7 +1,10 @@
 package com.inlurker.komiq.model.data.repository
 
-import com.inlurker.komiq.model.data.Chapter
-import com.inlurker.komiq.model.data.Comic
+import android.content.Context
+import com.inlurker.komiq.model.data.dao.ComicDao
+import com.inlurker.komiq.model.data.datamodel.Chapter
+import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.room.ComicDatabase
 import com.inlurker.komiq.model.mangadexapi.adapters.MangaChapterListResponse
 import com.inlurker.komiq.model.mangadexapi.adapters.MangadexMangaListResponse
 import com.inlurker.komiq.model.mangadexapi.adapters.MangadexMangaResponse
@@ -12,13 +15,23 @@ import com.inlurker.komiq.model.mangadexapi.parsers.mangadexChapterAdapterToChap
 import com.inlurker.komiq.model.mangadexapi.parsers.mangadexDataAdapterToManga
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 
 
 object ComicRepository {
+    private lateinit var comicDao: ComicDao
+    fun initialize(context: Context) {
+        val database = ComicDatabase.getDatabase(context)
+        comicDao = database.comicDao()
+    }
+
     suspend fun getComic(comicId: String): Comic? {
         val url = "https://api.mangadex.org/manga/$comicId?includes[]=author&includes[]=artist&includes[]=cover_art"
         val request = Request.Builder().url(url).get().build()
@@ -35,7 +48,7 @@ object ComicRepository {
         }
     }
 
-    suspend fun getComicChapterList(comicId: String): List<Chapter> {
+    suspend fun getComicChapterList(comicId: String): Flow<List<Chapter>> = flow {
         val url = "https://api.mangadex.org/manga/$comicId/feed?"
         val request = Request.Builder()
             .url(url)
@@ -77,9 +90,8 @@ object ComicRepository {
             }
         } while (offset < total)
 
-        return chapterList
+        emit(chapterList)
     }
-
 
     fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
         val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()
@@ -96,5 +108,34 @@ object ComicRepository {
         } ?: emptyList()
 
         emit(comicList)
+    }
+
+    fun getComicLibrary(): Flow<List<Comic>> {
+        return comicDao.getAllComics()
+    }
+
+    suspend fun addComicToLibrary(comic: Comic): Boolean {
+        return try {
+            comicDao.insertComic(comic)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun removeComicFromLibrary(comicId: String): Boolean {
+        return try {
+            comicDao.deleteComicById(comicId)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun isComicInLibrary(comicId: String): Flow<Boolean> {
+        return comicDao.getComicById(comicId)
+            .catch { emit(null) } // Handle any errors and emit null
+            .flowOn(Dispatchers.IO) // Switch to the IO dispatcher for database operations
+            .map { comic -> comic != null && comic.id == comicId }
     }
 }

@@ -62,7 +62,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
-import com.inlurker.komiq.model.data.Chapter
+import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent

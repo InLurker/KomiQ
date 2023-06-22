@@ -19,6 +19,15 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                        "room.schemaLocation":"$projectDir/schemas".toString(),
+                        "room.incremental":"true"
+                ]
+            }
+        }
     }
 
     buildTypes {
@@ -50,8 +59,10 @@ android {
 dependencies {
     implementation "androidx.paging:paging-runtime:3.1.1"
     implementation "androidx.room:room-runtime:2.5.1"
+    implementation "androidx.room:room-ktx:2.5.1"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1"
     implementation "com.squareup.moshi:moshi-kotlin:1.14.0"
+    implementation "com.google.code.gson:gson:2.10.1"
     implementation "com.github.bumptech.glide:compose:1.0.0-alpha.1"
     implementation "androidx.palette:palette-ktx:1.0.0"
     implementation "io.coil-kt:coil-compose:2.4.0"
@@ -80,6 +91,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling"
     debugImplementation "androidx.compose.ui:ui-test-manifest"
     annotationProcessor "androidx.room:room-compiler:2.5.1"
+    kapt "androidx.room:room-compiler:2.5.1"
 }
 // Allow references to generated code
 kapt {
