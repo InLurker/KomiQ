@@ -10,13 +10,15 @@ fun loadImageFromUrl(
     comicId: String,
     fileName: String
 ): ImageRequest {
-    val imageUrl = "https://uploads.mangadex.org/covers/$comicId/$fileName.512.jpg"
+    val imageUrl = getComicCoverUrl(
+        comicId = comicId,
+        fileName = fileName
+    )
     return ImageRequest.Builder(context)
         .data(imageUrl)
         .placeholder(R.drawable.cover_placeholder)
         .crossfade(true)
         .allowHardware(false)
-        .memoryCachePolicy(CachePolicy.ENABLED)
         .diskCachePolicy(CachePolicy.ENABLED)
         .networkCachePolicy(CachePolicy.ENABLED)
         .build()

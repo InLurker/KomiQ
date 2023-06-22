@@ -4,26 +4,43 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.inlurker.komiq.model.data.Chapter
 import com.inlurker.komiq.model.data.Comic
+import com.inlurker.komiq.model.data.Tag
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import kotlinx.coroutines.launch
 
 
 class ComicDetailViewModel(
-    comic: Comic
+    comicId: String
 ) : ViewModel() {
 
-    var comic by mutableStateOf(comic)
+
+    var comic by mutableStateOf(Comic())
         private set
 
     var isComicInLibrary by mutableStateOf(false)
         private set
 
-    var genreList by mutableStateOf(comic.tags)
+    var genreList by mutableStateOf(emptyList<Tag>())
         private set
 
 
-    suspend fun fetchChapterList() =
-        ComicRepository.getComicChapterList(comic.id)
+    var chapterList by mutableStateOf(emptyList<Chapter>())
+        private set
+
+    init {
+        viewModelScope.launch {
+            ComicRepository.getComic(comicId)?.let {
+                comic = it
+            }
+
+            genreList = comic.tags
+
+            chapterList = ComicRepository.getComicChapterList(comicId)
+        }
+    }
 
     fun toggleComicInLibrary(boolean: Boolean) {
         isComicInLibrary = boolean

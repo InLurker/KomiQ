@@ -15,6 +15,6 @@ interface ComicDao {
     @Query("SELECT * FROM comic WHERE id = :comicId")
     fun getComicById(comicId: String): Flow<Comic>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertComics(comics: List<Comic>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertComic(comic: Comic)
 }

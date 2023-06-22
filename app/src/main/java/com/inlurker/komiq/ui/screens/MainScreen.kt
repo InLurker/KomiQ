@@ -44,45 +44,55 @@ fun BottomNavigationBar(navHostController: NavHostController) {
     )
     val navBackStackEntry by navHostController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    NavigationBar {
-        screens.forEach { screen ->
-            var selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-            val contentColor = if (selected) {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-            NavigationBarItem(
-                icon = {
-                    Crossfade(targetState = selected) { isSelected ->
-                        if (isSelected)
-                            Icon(
-                                imageVector = screen.selectedIcon,
-                                contentDescription = screen.title,
-                                tint = contentColor
-                            )
-                        else
-                            Icon(
-                                imageVector = screen.unselectedIcon,
-                                contentDescription = screen.title,
-                                tint = contentColor
-                            )
-                    }
-                },
-                label = {
-                    Text(
-                        text = screen.title,
-                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
-                    )
-                },
-                selected = selected,
-                onClick = {
-                    navHostController.navigate(screen.route) {
-                        popUpTo(navHostController.graph.findStartDestination().id)
-                        launchSingleTop = true
-                    }
+    if (currentDestination?.route in listOf(
+            BottomNavigationScreenModel.Library.route,
+            BottomNavigationScreenModel.Discover.route
+        )
+    ) {
+        NavigationBar {
+            screens.forEach { screen ->
+                val selected =
+                    currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                val contentColor = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 }
-            )
+                NavigationBarItem(
+                    icon = {
+                        Crossfade(targetState = selected) { isSelected ->
+                            if (isSelected)
+                                Icon(
+                                    imageVector = screen.selectedIcon,
+                                    contentDescription = screen.title,
+                                    tint = contentColor
+                                )
+                            else
+                                Icon(
+                                    imageVector = screen.unselectedIcon,
+                                    contentDescription = screen.title,
+                                    tint = contentColor
+                                )
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = screen.title,
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
+                        )
+                    },
+                    selected = selected,
+                    onClick = {
+                        navHostController.navigate(screen.route) {
+                            popUpTo(navHostController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
         }
     }
 }

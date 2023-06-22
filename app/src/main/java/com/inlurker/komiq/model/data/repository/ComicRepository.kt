@@ -19,10 +19,6 @@ import okhttp3.Request
 
 
 object ComicRepository {
-
-    private val comics: MutableMap<String, Comic> = mutableMapOf()
-
-
     suspend fun getComic(comicId: String): Comic? {
         val url = "https://api.mangadex.org/manga/$comicId?includes[]=author&includes[]=artist&includes[]=cover_art"
         val request = Request.Builder().url(url).get().build()
@@ -71,11 +67,13 @@ object ComicRepository {
             val response = performMangadexApiRequest(requestWithQueryParams, adapter)
             response?.let { mangaChaptersResponse ->
                 val chapters = mangaChaptersResponse.data
-                val parsedChapters = mangadexChapterAdapterToChapter(chapters)
-                chapterList.addAll(parsedChapters)
+                chapters?.let {
+                    val parsedChapters = mangadexChapterAdapterToChapter(chapters)
+                    chapterList.addAll(parsedChapters)
 
-                total = mangaChaptersResponse.total
-                offset += limit
+                    total = mangaChaptersResponse.total
+                    offset += limit
+                }
             }
         } while (offset < total)
 

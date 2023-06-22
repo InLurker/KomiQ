@@ -11,6 +11,7 @@ suspend fun <T> performMangadexApiRequest(
     val deferred = CompletableDeferred<T?>()
     MangaDexApiHelper.enqueueRequest(request) { response ->
         val json = response?.body?.string()
+        println(json ?: "null")
         val parsedResult = if (json != null) {
             adapter.fromJson(json)
         } else {

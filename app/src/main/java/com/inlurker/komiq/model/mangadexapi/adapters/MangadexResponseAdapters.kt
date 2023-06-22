@@ -22,7 +22,7 @@ data class MangadexMangaListResponse(
 data class MangaChapterListResponse(
     val result: String,
     val response: String,
-    val data: List<MangadexChapterAdapter>,
+    val data: List<MangadexChapterAdapter>?,
     val limit: Int,
     val offset: Int,
     val total: Int

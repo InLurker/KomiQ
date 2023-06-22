@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,7 +40,7 @@ fun SortingToolbar(
                 .background(Color.Transparent)
         ) {
             Icon(
-                imageVector = Icons.Filled.ArrowUpward,
+                imageVector = Icons.Filled.ArrowDownward,
                 contentDescription = "Ascending",
                 tint = MaterialTheme.colorScheme.onSurface
             )

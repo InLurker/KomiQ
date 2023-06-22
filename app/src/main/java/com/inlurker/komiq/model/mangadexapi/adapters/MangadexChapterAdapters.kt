@@ -15,7 +15,7 @@ data class MangadexChapterAdapter(
 data class MangadexChapterAttributesAdapter(
     val volume: Int?,
     val chapter: Float,
-    val title: String,
+    val title: String?,
     val publishAt: String,
     val pages: Int
 )

@@ -2,6 +2,10 @@ package com.inlurker.komiq.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -25,10 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
@@ -39,9 +45,10 @@ import com.inlurker.komiq.viewmodel.paging.ListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiscoverScreen() {
-    val context = LocalContext.current
-    val viewModel: DiscoverViewModel = viewModel()
+fun DiscoverScreen(
+    navController: NavController = rememberNavController(),
+    viewModel: DiscoverViewModel = viewModel()
+) {
     val sortingMethods = listOf("Last Updated", "Date Added")
 
     val searchQueryState = remember { mutableStateOf("") }
@@ -52,16 +59,17 @@ fun DiscoverScreen() {
 
     val lazyGridScrollState = rememberLazyGridState()
 
-    LaunchedEffect(lazyGridScrollState) {
+    LaunchedEffect(lazyGridScrollState.canScrollForward) {
         val totalItemsCount = viewModel.comicList.size
         val lastVisibleItemIndex = lazyGridScrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 10
+        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 1
+        print(lastVisibleItemIndex)
+        print(totalItemsCount)
 
         if (nearEndOfList) {
             viewModel.loadNextPage()
         }
     }
-
 
     Scaffold(
         topBar = {
@@ -121,25 +129,40 @@ fun DiscoverScreen() {
 
             // Comic list
             itemsIndexed(viewModel.comicList) { index, comic ->
-                ComicCollectionComponent(comic = comic)
-                // Trigger pagination when reaching the end of the list
-                if (index == viewModel.comicList.size - 3) {
-                    viewModel.loadNextPage()
-                }
+                ComicCollectionComponent(
+                    comic = comic,
+                    onClick = {
+                        navController.navigate("detail/${comic.id}") {
+                            popUpToTop(navController)
+                        }
+                    }
+                )
             }
             // Pagination progress indicator
             when (viewModel.listState) {
-                ListState.LOADING -> {
+                ListState.LOADING, ListState.IDLE -> {
                     item {
                         ComicCollectionPlaceholder()
                     }
                 }
                 ListState.ERROR -> {
                     item(span = { GridItemSpan(3) }) {
-                        Text("An unknown error occured.")
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 20.dp)
+                        ){
+                            Text("An unknown error occurred.")
+                        }
                     }
                 }
                 else -> Unit
+            }
+            item(span = { GridItemSpan(3) }) {
+                Spacer(modifier = Modifier
+                    .height(120.dp)
+                )
             }
         }
     }

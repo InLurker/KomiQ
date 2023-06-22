@@ -21,7 +21,7 @@ fun mangadexChapterAdapterToChapter(mangadexChapters: List<MangadexChapterAdapte
             id = mangadexChapter.id,
             volume = chapterAttributes.volume,
             chapter = chapterAttributes.chapter,
-            title = chapterAttributes.title,
+            title = chapterAttributes.title ?: "No title",
             publishAt = LocalDateTime.parse(chapterAttributes.publishAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
             pages = chapterAttributes.pages,
             scanlationGroup = scanlationGroup

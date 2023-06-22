@@ -14,7 +14,7 @@ class ComicSearchQuery private constructor(
 ) {
     class Builder {
         private var searchQuery: String = ""
-        private var sortingMethod: String = MangaOrderOptions.RELEVANCE
+        private var sortingMethod: String = MangaOrderOptions.FOLLOWED_COUNT
         private var sortingOrder: String = SortingOrder.DESC
         private var comicAmount: Int = 30
         private var offsetAmount: Int = 0

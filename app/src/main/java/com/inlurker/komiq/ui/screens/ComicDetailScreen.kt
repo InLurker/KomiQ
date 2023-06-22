@@ -36,7 +36,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,11 +58,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.Chapter
-import com.inlurker.komiq.model.data.Comic
-import com.inlurker.komiq.model.data.repository.ComicRepository.getComic
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
@@ -73,17 +72,15 @@ import com.inlurker.komiq.ui.screens.helper.loadImageFromUrl
 import com.inlurker.komiq.ui.screens.helper.pluralize
 import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ComicDetailScreen(comic: Comic) {
+fun ComicDetailScreen(
+    navController: NavController = rememberNavController(),
+    viewModel: ComicDetailViewModel
+) {
     val context = LocalContext.current
-
-    val viewModel = ComicDetailViewModel(comic)
 
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
@@ -100,7 +97,7 @@ fun ComicDetailScreen(comic: Comic) {
     var topAppBarIconButtonColor by remember { mutableStateOf(onPrimaryMaterialContainerColor) }
 
 
-    val coverArtImageRequest = loadImageFromUrl(context, comic.id, comic.cover)
+    val coverArtImageRequest = loadImageFromUrl(context, viewModel.comic.id, viewModel.comic.cover)
 
     val isDarkTheme = isSystemInDarkTheme()
 
@@ -134,12 +131,10 @@ fun ComicDetailScreen(comic: Comic) {
 
     var chapterList by remember { mutableStateOf<List<Chapter>>(emptyList()) }
     var totalChapters by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        val fetchedChapterList = viewModel.fetchChapterList()
-        chapterList = fetchedChapterList
-        totalChapters = fetchedChapterList.size
+    LaunchedEffect(viewModel.chapterList) {
+        chapterList = viewModel.chapterList
+        totalChapters = chapterList.size
     }
-
     Scaffold(
         topBar = {
 
@@ -167,7 +162,9 @@ fun ComicDetailScreen(comic: Comic) {
                         TopAppBar(
                             title = {},
                             navigationIcon = {
-                                IconButton(onClick = { }) {
+                                IconButton(onClick = {
+                                    navController.popBackStack()
+                                }) {
                                     Icon(
                                         imageVector = Icons.Outlined.ArrowBack,
                                         contentDescription = "History",
@@ -207,7 +204,7 @@ fun ComicDetailScreen(comic: Comic) {
                             Column(
                                 modifier = Modifier
                                     .padding(horizontal = 10.dp)
-                                    .padding(top = 10.dp)
+                                    .padding(top = 8.dp)
                             ) {
                                 Text(
                                     text = "${viewModel.comic.year}, ${
@@ -317,8 +314,9 @@ fun ComicDetailScreen(comic: Comic) {
                             .height(35.dp)
                     ) {
                         Text(
-                            text = "Start Reading Chapter ${removeTrailingZero(chapterList.first().chapter)}",
-                            style = MaterialTheme.typography.labelMedium
+                            text = "Start Reading Chapter ${removeTrailingZero(chapterList.last().chapter)}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White
                         )
                     }
                 }
@@ -392,27 +390,10 @@ fun ComicDetailScreen(comic: Comic) {
 @Preview
 @Composable
 fun MangaDetailScreenPreview() {
-    var comic by remember { mutableStateOf<Comic?>(null) }
     //gorilla: a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
     //mato: e1e38166-20e4-4468-9370-187f985c550e
     //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579
-    DisposableEffect(true) {
-        val job = CoroutineScope(Dispatchers.IO).launch {
-            comic = getComic("e1e38166-20e4-4468-9370-187f985c550e")
-        }
-
-        onDispose {
-            job.cancel()
-        }
-    }
-
-    if (comic != null) {
-        print(comic)
-        ComicDetailScreen(comic!!)
-    } else {
-        // Show a loading indicator or handle the case when the comic is null
-        Text(text = "Loading...")
-    }
+    ComicDetailScreen(viewModel = ComicDetailViewModel("d7037b2a-874a-4360-8a7b-07f2899152fd"))
 }
     /*
     ComicDetailScreen(

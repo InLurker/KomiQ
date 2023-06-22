@@ -8,8 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.BottomNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
+import com.inlurker.komiq.ui.screens.ComicDetailScreen
 import com.inlurker.komiq.ui.screens.DiscoverScreen
 import com.inlurker.komiq.ui.screens.LibraryScreen
+import com.inlurker.komiq.viewmodel.ComicDetailViewModel
 
 @Composable
 fun NavigationGraph(navController: NavHostController) {
@@ -18,10 +20,10 @@ fun NavigationGraph(navController: NavHostController) {
         startDestination = BottomNavigationScreenModel.Library.route
     ) {
         composable(route = BottomNavigationScreenModel.Library.route) {
-            LibraryScreen()
+            LibraryScreen(navController)
         }
         composable(route = BottomNavigationScreenModel.Discover.route) {
-            DiscoverScreen()
+            DiscoverScreen(navController)
         }
         composable(
             route = ComicNavigationScreenModel.Detail.route,
@@ -29,7 +31,7 @@ fun NavigationGraph(navController: NavHostController) {
         ) { backStackEntry ->
             backStackEntry.arguments?.let { argument ->
                 argument.getString("comicId")?.let { comicId ->
-                    //ComicDetailScreen(Com) TODO
+                    ComicDetailScreen(navController, ComicDetailViewModel(comicId))
                 }
             }
         }
