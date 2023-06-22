@@ -1,6 +1,6 @@
 package com.inlurker.komiq.model.mangadexapi
 
-import com.inlurker.komiq.model.data.Chapter
+import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.repository.ComicRepository.getComicChapterList
 import kotlinx.coroutines.runBlocking
 

@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.data
+package com.inlurker.komiq.model.data.datamodel
 
 
 import java.time.LocalDateTime
