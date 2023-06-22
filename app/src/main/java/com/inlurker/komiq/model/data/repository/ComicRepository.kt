@@ -31,7 +31,6 @@ object ComicRepository {
         val database = ComicDatabase.getDatabase(context)
         comicDao = database.comicDao()
     }
-    
     suspend fun getComic(comicId: String): Comic? {
         val url = "https://api.mangadex.org/manga/$comicId?includes[]=author&includes[]=artist&includes[]=cover_art"
         val request = Request.Builder().url(url).get().build()
@@ -48,7 +47,7 @@ object ComicRepository {
         }
     }
 
-    suspend fun getComicChapterList(comicId: String): Flow<List<Chapter>> = flow {
+    suspend fun getComicChapterList(comicId: String): List<Chapter> {
         val url = "https://api.mangadex.org/manga/$comicId/feed?"
         val request = Request.Builder()
             .url(url)
@@ -90,8 +89,9 @@ object ComicRepository {
             }
         } while (offset < total)
 
-        emit(chapterList)
+        return chapterList
     }
+
 
     fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
         val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()

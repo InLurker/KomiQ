@@ -69,14 +69,12 @@ private fun findAltTitle(title: String, altTitles: List<Map<String, String>>): S
     if (altTitles.isEmpty()) {
         return "No alternative titles"
     }
-
-    val englishAltTitles = altTitles.filter { it["en"] != title }
-    val originalLanguageAltTitle = altTitles.find { it["en"] == title }
-
-    return when {
-        englishAltTitles.isNotEmpty() -> englishAltTitles[0]["en"] ?: title
-        originalLanguageAltTitle != null -> originalLanguageAltTitle[originalLanguageAltTitle["originalLanguage"]] ?: "No alternative titles"
-        else -> "No alternative titles"
+    val englishAltTitles = altTitles.filter { it.containsKey("en") && it["en"] != title }
+    val originalLanguageAltTitle = altTitles.find { it.containsKey("en") && it["en"] == title }
+    return if (englishAltTitles.isNotEmpty()) {
+        englishAltTitles[0]["en"] ?: title
+    } else {
+        originalLanguageAltTitle?.get(originalLanguageAltTitle["originalLanguage"]) ?: altTitles[0].values.first()
     }
 }
 

@@ -39,7 +39,7 @@ fun AddToLibraryButton(
     vibrantColor: Color,
     tonalFilledColor: Color,
     isInLibrary: Boolean,
-    onToggleAction: (Boolean) -> Unit,
+    onToggleAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val backgroundColor = remember { Animatable(Color.Transparent) }
@@ -60,7 +60,7 @@ fun AddToLibraryButton(
         LocalMinimumInteractiveComponentEnforcement provides false,
     ) {
         Button(
-            onClick = { onToggleAction(!isInLibrary) },
+            onClick = { onToggleAction() },
             colors = ButtonDefaults.buttonColors(backgroundColor.value),
             contentPadding = PaddingValues(
                 start = 6.dp,

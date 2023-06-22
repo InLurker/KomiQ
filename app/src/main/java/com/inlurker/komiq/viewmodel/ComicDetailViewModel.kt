@@ -16,6 +16,7 @@ class ComicDetailViewModel(
     comicId: String
 ) : ViewModel() {
 
+
     var comic by mutableStateOf(Comic())
         private set
 
@@ -24,6 +25,7 @@ class ComicDetailViewModel(
 
     var genreList by mutableStateOf(emptyList<Tag>())
         private set
+
 
     var chapterList by mutableStateOf(emptyList<Chapter>())
         private set
@@ -34,25 +36,26 @@ class ComicDetailViewModel(
                 comic = it
             }
 
-            ComicRepository.getComicChapterList(comicId).collect { chapters ->
-                chapterList = chapters
-            }
+            genreList = comic.tags
+
+            chapterList = ComicRepository.getComicChapterList(comicId)
 
             ComicRepository.isComicInLibrary(comicId).collect { isInLibrary ->
                 isComicInLibrary = isInLibrary
             }
         }
-        genreList = comic.tags
     }
 
-    fun toggleComicInLibrary(addToLibrary: Boolean) {
+    fun toggleComicInLibrary() {
         viewModelScope.launch {
-            if (addToLibrary) {
+            val success = if (isComicInLibrary) {
                 ComicRepository.removeComicFromLibrary(comic.id)
-                isComicInLibrary = false
             } else {
                 ComicRepository.addComicToLibrary(comic)
-                isComicInLibrary = true
+            }
+
+            if (success) {
+                isComicInLibrary = !isComicInLibrary
             }
         }
     }

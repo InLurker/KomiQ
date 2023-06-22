@@ -91,7 +91,6 @@ fun ComicDetailScreen(
     val secondaryMaterialContainerColor = MaterialTheme.colorScheme.secondaryContainer
     val onPrimaryMaterialContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-
     var vibrantColor by remember { mutableStateOf(primaryMaterialColor) }
     var secondaryVibrantColor by remember { mutableStateOf(secondaryMaterialContainerColor) }
     var topAppBarIconButtonColor by remember { mutableStateOf(onPrimaryMaterialContainerColor) }
@@ -243,8 +242,8 @@ fun ComicDetailScreen(
                                     vibrantColor = vibrantColor,
                                     tonalFilledColor = secondaryVibrantColor,
                                     isInLibrary = viewModel.isComicInLibrary,
-                                    onToggleAction = { inLibrary ->
-                                        viewModel.toggleComicInLibrary(inLibrary)
+                                    onToggleAction = {
+                                        viewModel.toggleComicInLibrary()
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(3.dp))

@@ -2,7 +2,6 @@ package com.inlurker.komiq.model.mangadexapi
 
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.repository.ComicRepository.getComicChapterList
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 
 
@@ -25,8 +24,16 @@ example url: https://api.mangadex.org/manga/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 fun main() {
     val comicId = "d7037b2a-874a-4360-8a7b-07f2899152fd"
-    val chapterList: Flow<List<Chapter>>
+    val chapterList: List<Chapter>
     runBlocking {
         chapterList = getComicChapterList(comicId)
+    }
+    for ((index, chapter) in chapterList.withIndex()) {
+        println(index)
+        println("Vol ${chapter.volume} Ch. ${chapter.chapter}")
+        println("Chapter ID: ${chapter.id}")
+        println("Title: ${chapter.title}")
+        println("Scan: ${chapter.scanlationGroup}")
+        println()
     }
 }
