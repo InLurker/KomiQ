@@ -4,15 +4,17 @@ import android.content.Context
 import com.inlurker.komiq.model.data.dao.ComicDao
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPages
+import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPagesResponse
+import com.inlurker.komiq.model.data.mangadexapi.adapters.MangaChapterListResponse
+import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexMangaListResponse
+import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexMangaResponse
+import com.inlurker.komiq.model.data.mangadexapi.builders.ComicSearchQuery
+import com.inlurker.komiq.model.data.mangadexapi.helper.performMangadexApiRequest
+import com.inlurker.komiq.model.data.mangadexapi.parsers.mangaListResponseToComicList
+import com.inlurker.komiq.model.data.mangadexapi.parsers.mangadexChapterAdapterToChapter
+import com.inlurker.komiq.model.data.mangadexapi.parsers.mangadexDataAdapterToManga
 import com.inlurker.komiq.model.data.room.ComicDatabase
-import com.inlurker.komiq.model.mangadexapi.adapters.MangaChapterListResponse
-import com.inlurker.komiq.model.mangadexapi.adapters.MangadexMangaListResponse
-import com.inlurker.komiq.model.mangadexapi.adapters.MangadexMangaResponse
-import com.inlurker.komiq.model.mangadexapi.builders.ComicSearchQuery
-import com.inlurker.komiq.model.mangadexapi.helper.performMangadexApiRequest
-import com.inlurker.komiq.model.mangadexapi.parsers.mangaListResponseToComicList
-import com.inlurker.komiq.model.mangadexapi.parsers.mangadexChapterAdapterToChapter
-import com.inlurker.komiq.model.mangadexapi.parsers.mangadexDataAdapterToManga
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
@@ -110,6 +112,20 @@ object ComicRepository {
         emit(comicList)
     }
 
+    suspend fun getChapterPages(chapterId: String): ChapterPages? {
+        val request = Request.Builder()
+            .url("https://api.mangadex.org/at-home/server/$chapterId")
+            .build()
+
+        val moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(ChapterPagesResponse::class.java)
+
+        val response = performMangadexApiRequest(request, jsonAdapter)
+        return response?.takeIf { it.result == "ok" }?.chapter
+    }
+
     fun getComicLibrary(): Flow<List<Comic>> {
         return comicDao.getAllComics()
     }
@@ -138,4 +154,5 @@ object ComicRepository {
             .flowOn(Dispatchers.IO) // Switch to the IO dispatcher for database operations
             .map { comic -> comic != null && comic.id == comicId }
     }
+
 }

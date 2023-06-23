@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.adapters
+package com.inlurker.komiq.model.data.mangadexapi.adapters
 
 import com.squareup.moshi.JsonClass
 

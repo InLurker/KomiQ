@@ -1,7 +1,7 @@
-package com.inlurker.komiq.model.mangadexapi.builders
+package com.inlurker.komiq.model.data.mangadexapi.builders
 
-import com.inlurker.komiq.model.mangadexapi.constants.MangaOrderOptions
-import com.inlurker.komiq.model.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
+import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
 
 class ComicSearchQuery private constructor(
     var searchQuery: String,

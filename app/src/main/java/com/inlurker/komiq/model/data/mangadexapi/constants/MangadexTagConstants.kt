@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.constants
+package com.inlurker.komiq.model.data.mangadexapi.constants
 
 object GenreTag {
     const val THRILLER = "07251805-a27e-4d59-b488-f0bfbec15168"

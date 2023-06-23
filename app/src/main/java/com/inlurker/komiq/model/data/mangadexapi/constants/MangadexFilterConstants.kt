@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.constants
+package com.inlurker.komiq.model.data.mangadexapi.constants
 
 object MangaStatus {
     const val ONGOING = "ongoing"

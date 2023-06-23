@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.helper
+package com.inlurker.komiq.model.data.mangadexapi.helper
 
 import okhttp3.Call
 import okhttp3.Callback

@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.mangadexapi.helper
+package com.inlurker.komiq.model.data.mangadexapi.helper
 
 import com.squareup.moshi.JsonAdapter
 import kotlinx.coroutines.CompletableDeferred
