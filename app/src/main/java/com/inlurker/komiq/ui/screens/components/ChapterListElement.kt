@@ -18,13 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.inlurker.komiq.ui.screens.helper.formatDate
-import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
+import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterSourceInfo
+import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterVolume
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,18 +38,16 @@ fun ChapterListElement(
     onClick: () -> Unit
 ) {
 
-    val chapterDetails = buildAnnotatedString {
-        if (volumeNumber != 0) {
-            append("Vol. $volumeNumber ")
-        }
-        append("Chapter ${removeTrailingZero(chapterNumber)} - ")
-        append(chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
-    }
+    val chapterDetails = formatChapterVolume(
+        volumeNumber = volumeNumber,
+        chapterNumber = chapterNumber,
+        chapterName = chapterName
+    )
 
-    val chapterSourceInfo = buildAnnotatedString {
-        append("${formatDate(uploadDate)} • ")
-        append(scanlationGroup.takeIf { it.isNotEmpty() } ?: "Unknown")
-    }
+    val chapterSourceInfo = formatChapterSourceInfo(
+        uploadDate = uploadDate,
+        scanlationGroup = scanlationGroup
+    )
 
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentEnforcement provides false,

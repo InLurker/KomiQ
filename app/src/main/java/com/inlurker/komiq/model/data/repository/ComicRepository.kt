@@ -6,13 +6,15 @@ import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPages
 import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPagesResponse
-import com.inlurker.komiq.model.data.mangadexapi.adapters.MangaChapterListResponse
+import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexChapterListResponse
+import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexChapterResponse
 import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexMangaListResponse
 import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexMangaResponse
 import com.inlurker.komiq.model.data.mangadexapi.builders.ComicSearchQuery
 import com.inlurker.komiq.model.data.mangadexapi.helper.performMangadexApiRequest
-import com.inlurker.komiq.model.data.mangadexapi.parsers.mangaListResponseToComicList
-import com.inlurker.komiq.model.data.mangadexapi.parsers.mangadexChapterAdapterToChapter
+import com.inlurker.komiq.model.data.mangadexapi.parsers.chapterAdapterListToChapterList
+import com.inlurker.komiq.model.data.mangadexapi.parsers.chapterAdapterToChapter
+import com.inlurker.komiq.model.data.mangadexapi.parsers.mangaAdapterListToComicList
 import com.inlurker.komiq.model.data.mangadexapi.parsers.mangadexDataAdapterToManga
 import com.inlurker.komiq.model.data.room.ComicDatabase
 import com.squareup.moshi.Moshi
@@ -49,6 +51,24 @@ object ComicRepository {
         }
     }
 
+
+
+    fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
+        val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()
+
+        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        val adapter = moshi.adapter(MangadexMangaListResponse::class.java)
+
+        val comicList = performMangadexApiRequest(request, adapter)?.run {
+            if (result == "ok") {
+                data?.let { mangaAdapterListToComicList(it) }
+            } else {
+                emptyList()
+            }
+        } ?: emptyList()
+
+        emit(comicList)
+    }
     suspend fun getComicChapterList(comicId: String): List<Chapter> {
         val url = "https://api.mangadex.org/manga/$comicId/feed?"
         val request = Request.Builder()
@@ -57,7 +77,7 @@ object ComicRepository {
             .build()
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        val adapter = moshi.adapter(MangaChapterListResponse::class.java)
+        val adapter = moshi.adapter(MangadexChapterListResponse::class.java)
 
         var offset = 0
         val limit = 100
@@ -82,7 +102,7 @@ object ComicRepository {
             response?.let { mangaChaptersResponse ->
                 val chapters = mangaChaptersResponse.data
                 chapters?.let {
-                    val parsedChapters = mangadexChapterAdapterToChapter(chapters)
+                    val parsedChapters = chapterAdapterListToChapterList(chapters)
                     chapterList.addAll(parsedChapters)
 
                     total = mangaChaptersResponse.total
@@ -94,22 +114,20 @@ object ComicRepository {
         return chapterList
     }
 
-
-    fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
-        val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()
+    suspend fun getChapter(chapterId: String): Chapter? {
+        val url = "https://api.mangadex.org/chapter/$chapterId?includes[]=scanlation_group"
+        val request = Request.Builder().url(url).get().build()
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        val adapter = moshi.adapter(MangadexMangaListResponse::class.java)
+        val adapter = moshi.adapter(MangadexChapterResponse::class.java)
 
-        val comicList = performMangadexApiRequest(request, adapter)?.run {
+        return performMangadexApiRequest(request, adapter)?.run {
             if (result == "ok") {
-                data?.let { mangaListResponseToComicList(it) }
+                data?.let { chapterAdapterToChapter(it) }
             } else {
-                emptyList()
+                null
             }
-        } ?: emptyList()
-
-        emit(comicList)
+        }
     }
 
     suspend fun getChapterPages(chapterId: String): ChapterPages? {

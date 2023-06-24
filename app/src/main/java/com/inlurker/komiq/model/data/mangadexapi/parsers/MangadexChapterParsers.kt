@@ -5,26 +5,28 @@ import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexChapterAdapter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-fun mangadexChapterAdapterToChapter(mangadexChapters: List<MangadexChapterAdapter>): List<Chapter> {
-    return mangadexChapters.map { mangadexChapter ->
-        val chapterAttributes = mangadexChapter.attributes
-        val relationships = mangadexChapter.relationships
-        var scanlationGroup = "unknown" // Fallback value
+fun chapterAdapterToChapter(mangadexChapter: MangadexChapterAdapter): Chapter {
+    val chapterAttributes = mangadexChapter.attributes
+    val relationships = mangadexChapter.relationships
+    var scanlationGroup = "unknown" // Fallback value
 
-        relationships.forEach { relationship ->
-            if (relationship.type == "scanlation_group" && relationship.attributes != null) {
-                scanlationGroup = relationship.attributes.name
-            }
+    relationships.forEach { relationship ->
+        if (relationship.type == "scanlation_group" && relationship.attributes != null) {
+            scanlationGroup = relationship.attributes.name
         }
-
-        Chapter(
-            id = mangadexChapter.id,
-            volume = chapterAttributes.volume,
-            chapter = chapterAttributes.chapter,
-            title = chapterAttributes.title ?: "No title",
-            publishAt = LocalDateTime.parse(chapterAttributes.publishAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            pages = chapterAttributes.pages,
-            scanlationGroup = scanlationGroup
-        )
     }
+
+    return Chapter(
+        id = mangadexChapter.id,
+        volume = chapterAttributes.volume,
+        chapter = chapterAttributes.chapter,
+        title = chapterAttributes.title ?: "No title",
+        publishAt = LocalDateTime.parse(chapterAttributes.publishAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+        pages = chapterAttributes.pages,
+        scanlationGroup = scanlationGroup
+    )
+}
+
+fun chapterAdapterListToChapterList(mangadexChapterList: List<MangadexChapterAdapter>): List<Chapter> {
+    return mangadexChapterList.map { chapterAdapterToChapter(it) }
 }

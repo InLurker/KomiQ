@@ -30,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -63,14 +62,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.datamodel.Chapter
+import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
 import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
-import com.inlurker.komiq.ui.screens.helper.adjustLuminance
-import com.inlurker.komiq.ui.screens.helper.generateColorPalette
-import com.inlurker.komiq.ui.screens.helper.loadImageFromUrl
-import com.inlurker.komiq.ui.screens.helper.pluralize
-import com.inlurker.komiq.ui.screens.helper.removeTrailingZero
+import com.inlurker.komiq.ui.screens.helper.ColorHelper.adjustLuminance
+import com.inlurker.komiq.ui.screens.helper.ColorHelper.generateColorPalette
+import com.inlurker.komiq.ui.screens.helper.Formatters.pluralize
+import com.inlurker.komiq.ui.screens.helper.Formatters.removeTrailingZero
+import com.inlurker.komiq.ui.screens.helper.ImageHelper.loadImageFromUrl
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
 import java.util.Locale
 
@@ -134,261 +135,258 @@ fun ComicDetailScreen(
         chapterList = viewModel.chapterList
         totalChapters = chapterList.size
     }
-    Scaffold(
-        topBar = {
-
-        },
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
-    ) { paddingValue ->
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .padding(paddingValue)
-        ) {
-            item {
-                Box(
+    ) {
+        item {
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .wrapContentSize()
+            ) {
+                Column(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .wrapContentSize()
+                        .zIndex(3f)
+                        .nestedScroll(scrollBehavior.nestedScrollConnection)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .zIndex(3f)
-                            .nestedScroll(scrollBehavior.nestedScrollConnection)
-                    ) {
-                        TopAppBar(
-                            title = {},
-                            navigationIcon = {
-                                IconButton(onClick = {
-                                    navController.popBackStack()
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.ArrowBack,
-                                        contentDescription = "History",
-                                        tint = topAppBarIconButtonColor
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.MoreVert,
-                                        contentDescription = "More",
-                                        tint = topAppBarIconButtonColor
-                                    )
-                                }
-                            },
-                            scrollBehavior = scrollBehavior,
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp)
-                                .padding(top = 8.dp)
-                                .height(180.dp)
-                        ) {
-                            Image(
-                                painter,
-                                contentDescription = "cover",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .aspectRatio(2f / 3f)
-                                    .clip(RoundedCornerShape(10.dp))
-                            )
-
-                            Column(
-                                modifier = Modifier
-                                    .padding(horizontal = 10.dp)
-                                    .padding(top = 8.dp)
-                            ) {
-                                Text(
-                                    text = "${viewModel.comic.year}, ${
-                                        viewModel.comic.status.replaceFirstChar {
-                                            if (it.isLowerCase()) it.titlecase(
-                                                Locale.ROOT
-                                            ) else it.toString()
-                                        }
-                                    }",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 1
-                                )
-
-                                Text(
-                                    text = viewModel.comic.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 3
-                                )
-
-                                Text(
-                                    text = viewModel.comic.altTitle,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Normal,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 2
-                                )
-
-                                Spacer(Modifier.weight(1f))
-
-                                AddToLibraryButton(
-                                    vibrantColor = vibrantColor,
-                                    tonalFilledColor = secondaryVibrantColor,
-                                    isInLibrary = viewModel.isComicInLibrary,
-                                    onToggleAction = {
-                                        viewModel.toggleComicInLibrary()
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = viewModel.comic.authors.joinToString(", "),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Normal,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 2
+                    TopAppBar(
+                        title = {},
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                navController.popBackStack()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowBack,
+                                    contentDescription = "History",
+                                    tint = topAppBarIconButtonColor
                                 )
                             }
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.background.copy(0.3f),
-                                        MaterialTheme.colorScheme.background
-                                    )
+                        },
+                        actions = {
+                            IconButton(onClick = { }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "More",
+                                    tint = topAppBarIconButtonColor
                                 )
-                            )
-                            .zIndex(2f)
+                            }
+                        },
+                        scrollBehavior = scrollBehavior,
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                     )
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .matchParentSize()
-                            .background(vibrantColor)
-                            .zIndex(0f)
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 8.dp)
+                            .height(180.dp)
                     ) {
                         Image(
                             painter,
-                            contentDescription = "Blurred Cover",
+                            contentDescription = "cover",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .matchParentSize()
-                                .blur(3.dp)
-                                .alpha(0.5f)
+                                .fillMaxHeight()
+                                .aspectRatio(2f / 3f)
+                                .clip(RoundedCornerShape(10.dp))
                         )
-                    }
-                }
-            }
-            item {
-                CollapsibleDescriptionComponent(
-                    description = viewModel.comic.description,
-                    tagList = viewModel.genreList,
-                    genreTagColor = secondaryVibrantColor,
-                    collapseTextButtonColor = vibrantColor,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                )
-            }
-            if (chapterList.isNotEmpty()) {
-                item {
-                    Button(
-                        onClick = {
-                            /* TODO */
-                        },
-                        colors = ButtonDefaults.buttonColors(vibrantColor),
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .fillMaxWidth()
-                            .height(35.dp)
-                    ) {
-                        Text(
-                            text = "Start Reading Chapter ${removeTrailingZero(chapterList.last().chapter)}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White
-                        )
-                    }
-                }
-            }
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Button(
-                        onClick = { /*TODO*/ },
-                        contentPadding = PaddingValues(0.dp),
-                        shape = RectangleShape,
-                        colors = ButtonDefaults.buttonColors(Color.Transparent),
-                        modifier = Modifier
-                            .height(36.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 10.dp)
+                                .padding(top = 8.dp)
                         ) {
                             Text(
-                                text = pluralize(totalChapters, "Chapter"),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                text = "${viewModel.comic.year}, ${
+                                    viewModel.comic.status.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase(
+                                            Locale.ROOT
+                                        ) else it.toString()
+                                    }
+                                }",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1
                             )
-                            Spacer(
-                                modifier = Modifier.weight(1f)
+
+                            Text(
+                                text = viewModel.comic.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Medium,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 3
                             )
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "Filter Chapters",
-                                tint = MaterialTheme.colorScheme.onSurface
+
+                            Text(
+                                text = viewModel.comic.altTitle,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Normal,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 2
+                            )
+
+                            Spacer(Modifier.weight(1f))
+
+                            AddToLibraryButton(
+                                vibrantColor = vibrantColor,
+                                tonalFilledColor = secondaryVibrantColor,
+                                isInLibrary = viewModel.isComicInLibrary,
+                                onToggleAction = {
+                                    viewModel.toggleComicInLibrary()
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = viewModel.comic.authors.joinToString(", "),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Normal,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2
                             )
                         }
                     }
-                    Divider(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        thickness = 1.dp
+                }
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.background.copy(0.3f),
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        )
+                        .zIndex(2f)
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(vibrantColor)
+                        .zIndex(0f)
+                ) {
+                    Image(
+                        painter,
+                        contentDescription = "Blurred Cover",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .blur(3.dp)
+                            .alpha(0.5f)
                     )
-                    if (chapterList.isNotEmpty()) {
-                        chapterList.forEach { chapter ->
-                            ChapterListElement(
-                                volumeNumber = chapter.volume ?: 0,
-                                chapterNumber = chapter.chapter,
-                                chapterName = chapter.title,
-                                uploadDate = chapter.publishAt,
-                                scanlationGroup = chapter.scanlationGroup,
-                                backgroundColor = secondaryVibrantColor,
-                                onClick = { /* TODO */ }
-                            )
-                            Divider(
-                                color = Color.Gray,
-                                thickness = 1.dp
-                            )
-                        }
-                    } else {
-                        CircularProgressIndicator(
-                            color = secondaryVibrantColor,
-                            modifier = Modifier.padding(16.dp)
+                }
+            }
+        }
+        item {
+            CollapsibleDescriptionComponent(
+                description = viewModel.comic.description,
+                tagList = viewModel.genreList,
+                genreTagColor = secondaryVibrantColor,
+                collapseTextButtonColor = vibrantColor,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+            )
+        }
+        if (chapterList.isNotEmpty()) {
+            item {
+                Button(
+                    onClick = {
+                        /* TODO */
+                    },
+                    colors = ButtonDefaults.buttonColors(vibrantColor),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .height(35.dp)
+                ) {
+                    Text(
+                        text = "Start Reading Chapter ${removeTrailingZero(chapterList.last().chapter)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Button(
+                    onClick = { /*TODO*/ },
+                    contentPadding = PaddingValues(0.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Transparent),
+                    modifier = Modifier
+                        .height(36.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = pluralize(totalChapters, "Chapter"),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Filter Chapters",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
+                Divider(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    thickness = 1.dp
+                )
+                if (chapterList.isNotEmpty()) {
+                    chapterList.forEach { chapter ->
+                        ChapterListElement(
+                            volumeNumber = chapter.volume ?: 0,
+                            chapterNumber = chapter.chapter,
+                            chapterName = chapter.title,
+                            uploadDate = chapter.publishAt,
+                            scanlationGroup = chapter.scanlationGroup,
+                            backgroundColor = secondaryVibrantColor,
+                            onClick = {
+                                navController.navigate("reader/${chapter.id}") {
+                                    popUpToTop(navController)
+                                }
+                            }
+                        )
+                        Divider(
+                            color = Color.Gray,
+                            thickness = 1.dp
+                        )
+                    }
+                } else {
+                    CircularProgressIndicator(
+                        color = secondaryVibrantColor,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
-            item {
-                Spacer(modifier = Modifier.height(100.dp))
-            }
+        }
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
 
 @Preview
 @Composable
-fun MangaDetailScreenPreview() {
+fun ComicDetailScreenPreview() {
+    ComicRepository.initialize(LocalContext.current)
     //gorilla: a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
     //mato: e1e38166-20e4-4468-9370-187f985c550e
     //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579

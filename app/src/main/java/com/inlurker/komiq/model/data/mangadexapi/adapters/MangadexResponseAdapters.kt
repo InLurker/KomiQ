@@ -17,9 +17,15 @@ data class MangadexMangaListResponse(
     val data: List<MangadexDataAdapter>?
 )
 
+@JsonClass(generateAdapter = true)
+data class MangadexChapterResponse(
+    val result: String,
+    val response: String,
+    val data: MangadexChapterAdapter?
+)
 
 @JsonClass(generateAdapter = true)
-data class MangaChapterListResponse(
+data class MangadexChapterListResponse(
     val result: String,
     val response: String,
     val data: List<MangadexChapterAdapter>?,

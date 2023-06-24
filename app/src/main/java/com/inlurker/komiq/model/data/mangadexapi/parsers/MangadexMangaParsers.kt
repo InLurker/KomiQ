@@ -85,11 +85,6 @@ private fun findDescription(description: Map<String, String>, altTitles: List<Ma
     return englishDescription ?: originalLanguageDescription ?: altTitles.firstOrNull()?.values?.firstOrNull() ?: "No description available"
 }
 
-fun mangaListResponseToComicList(dataAdapterList: List<MangadexDataAdapter>): List<Comic> {
-    val comicList = mutableListOf<Comic>()
-
-    dataAdapterList.forEach { dataAdapter ->
-        comicList.add(mangadexDataAdapterToManga(dataAdapter))
-    }
-    return comicList
+fun mangaAdapterListToComicList(mangaAdapterList: List<MangadexDataAdapter>): List<Comic> {
+    return mangaAdapterList.map { mangadexDataAdapterToManga(it) }
 }

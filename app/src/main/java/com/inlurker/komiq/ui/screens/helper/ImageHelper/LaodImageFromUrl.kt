@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens.helper
+package com.inlurker.komiq.ui.screens.helper.ImageHelper
 
 import android.content.Context
 import coil.request.CachePolicy

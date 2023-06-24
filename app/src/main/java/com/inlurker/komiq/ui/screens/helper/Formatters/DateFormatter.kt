@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens.helper
+package com.inlurker.komiq.ui.screens.helper.Formatters
 
 import android.text.format.DateUtils
 import java.time.LocalDateTime

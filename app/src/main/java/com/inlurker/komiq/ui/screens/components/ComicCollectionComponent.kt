@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.inlurker.komiq.model.data.datamodel.Comic
-import com.inlurker.komiq.ui.screens.helper.getComicCoverUrl
+import com.inlurker.komiq.ui.screens.helper.ImageHelper.getComicCoverUrl
 
 @Composable
 fun ComicCollectionComponent(
