@@ -29,7 +29,6 @@ fun SettingSlider(
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .padding(horizontal = 16.dp)
     ) {
         Icon(
             imageVector = icon,

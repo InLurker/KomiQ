@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +59,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.inlurker.komiq.ui.screens.components.PageReaders.HorizontalPageReader
 import com.inlurker.komiq.ui.screens.components.PageReaders.VerticalPageReader
+import com.inlurker.komiq.ui.screens.components.SegmentedButton
+import com.inlurker.komiq.ui.screens.components.SegmentedButtonItem
 import com.inlurker.komiq.ui.screens.components.SettingComponents.DropdownSettings
 import com.inlurker.komiq.ui.screens.components.SettingComponents.ReadingPreferencesSetting
 import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterVolume
@@ -95,8 +99,10 @@ fun ComicReaderScreen(
     var eyeCare by remember { mutableStateOf(0) }
     var brightnessScale by remember { mutableStateOf(100) }
     var saturationScale by remember { mutableStateOf(100) }
+    var isGreyscaleSelected by remember { mutableStateOf(false) }
+    var isInvertSelected by remember { mutableStateOf(false) }
 
-    val combinedColorMatrix by remember(eyeCare, brightnessScale, saturationScale) {
+    val colorFilter by remember(eyeCare, brightnessScale, saturationScale, isGreyscaleSelected, isInvertSelected) {
         derivedStateOf {
             val result = ColorMatrix()
 
@@ -131,16 +137,26 @@ fun ComicReaderScreen(
             result *= eyeCareMatrix
             result *= saturationMatrix
 
-            result
-        }
-    }
+            if(isGreyscaleSelected) {
+                result *= ColorMatrix().apply {
+                    setToSaturation(0f)
+                }
+            }
+            if(isInvertSelected) {
+                result *= ColorMatrix(
+                    floatArrayOf(
+                        -1f, 0f, 0f, 0f, 255f,
+                        0f, -1f, 0f, 0f, 255f,
+                        0f, 0f, -1f, 0f, 255f,
+                        0f, 0f, 0f, 1f, 0f
+                    )
+                )
+            }
 
-    val colorFilter by remember(combinedColorMatrix) {
-        mutableStateOf(
             ColorFilter.colorMatrix(
-                colorMatrix = combinedColorMatrix
+                colorMatrix = result
             )
-        )
+        }
     }
 
     var topAppBarVisible by remember { mutableStateOf(true) }
@@ -164,8 +180,8 @@ fun ComicReaderScreen(
     val readingLayoutOptions = listOf(
         "Right to Left",
         "Left to Right",
-        "Top to Down",
-        "Bottom to Up"
+        "Top to Bottom",
+        "Bottom to Top"
     )
 
     KomiQTheme(
@@ -178,8 +194,8 @@ fun ComicReaderScreen(
             sheetContent = {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 32.dp)
                 ) {
                     DropdownSettings(
                         label = "Background Colour",
@@ -192,7 +208,10 @@ fun ComicReaderScreen(
                                 2 -> true
                                 else -> isSystemDarkMode
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     )
 
                     DropdownSettings(
@@ -208,7 +227,10 @@ fun ComicReaderScreen(
                                 3 -> ReadingDirection.BottomToTop
                                 else -> ReadingDirection.BottomToTop
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     )
 
                     Spacer(Modifier.height(16.dp))
@@ -221,9 +243,39 @@ fun ComicReaderScreen(
                         saturationScale = saturationScale,
                         onSaturationScaleChange = { saturationScale = it }
                     )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    SegmentedButton {
+                        SegmentedButtonItem(
+                            isSelected = isGreyscaleSelected,
+                            onClick = { select ->
+                                isGreyscaleSelected = select
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "Greyscale")
+                        }
+                        Divider(
+                            color = MaterialTheme.colorScheme.outline,
+                            thickness = 1.dp,
+                            modifier = Modifier
+                                .fillMaxHeight()  //fill the max height
+                                .width(1.dp)
+                        )
+                        SegmentedButtonItem(
+                            isSelected = isInvertSelected,
+                            onClick = { select ->
+                                isInvertSelected = select
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "Invert")
+                        }
+                    }
                 }
             }
-        ){ paddingValue ->
+        ) { paddingValue ->
             Box(
                 modifier = Modifier
                     .padding(paddingValue)

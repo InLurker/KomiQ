@@ -2,7 +2,6 @@ package com.inlurker.komiq.ui.screens.components
 
 import android.content.Context
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,9 +24,11 @@ import coil.request.ImageRequest
 
 @Composable
 fun PageImage(
+    context: Context,
     imageUrl: String,
     colorFilter: ColorFilter,
-    context: Context
+    contentScale: ContentScale,
+    modifier: Modifier = Modifier
 ) {
     val imageRequest = ImageRequest.Builder(context)
         .data(imageUrl)
@@ -43,7 +44,7 @@ fun PageImage(
         SubcomposeAsyncImage(
             model = imageRequest,
             contentDescription = "Comic Chapter Page",
-            contentScale = ContentScale.FillWidth,
+            contentScale = contentScale,
             colorFilter = colorFilter,
             onLoading = {
                 isLoading = true
@@ -54,10 +55,9 @@ fun PageImage(
             onError = {
                 isLoading = false
             },
-            modifier = Modifier
+            modifier = modifier
                 .zIndex(1f)
                 .align(Alignment.Center)
-                .fillMaxWidth()
         )
 
         if (isLoading)
