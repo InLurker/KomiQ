@@ -16,7 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.inlurker.komiq.ui.screens.components.RotatingExpandIcon
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingExpandIcon
 
 @Composable
 fun DropdownSettings(

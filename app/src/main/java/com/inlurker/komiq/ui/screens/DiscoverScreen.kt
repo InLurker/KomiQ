@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,8 +27,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
+import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
 import com.inlurker.komiq.ui.navigation.popUpToTop
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
-import com.inlurker.komiq.ui.screens.components.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
@@ -49,22 +55,44 @@ fun DiscoverScreen(
     navController: NavController = rememberNavController(),
     viewModel: DiscoverViewModel = viewModel()
 ) {
-    val sortingMethods = listOf("Last Updated", "Date Added")
+    val sortingMethods = listOf(
+        MangaOrderOptions.FOLLOWED_COUNT to "Popularity",
+        MangaOrderOptions.RELEVANCE to "Relevance",
+        MangaOrderOptions.LATEST_UPLOADED_CHAPTER to "Latest",
+        MangaOrderOptions.UPDATED_AT to "Updated",
+        MangaOrderOptions.CREATED_AT to "Created",
+        MangaOrderOptions.TITLE to "Alphabetical",
+        MangaOrderOptions.YEAR to "Year"
+    )
 
-    val searchQueryState = remember { mutableStateOf("") }
-    val searchedActionState = remember { mutableStateOf(false) }
-    val searchHintState = remember { mutableStateOf("Search comic") }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchActive by remember { mutableStateOf(false) }
+    val searchHint = "Search comic"
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+    var isDescending  by remember { mutableStateOf(true) }
 
     val lazyGridScrollState = rememberLazyGridState()
+
+    val onSearchAction= {
+        searchActive = true
+        viewModel.searchQuery = searchQuery
+        viewModel.updateSearchQuery()
+        viewModel.resetComicList()
+    }
+
+    val onClearSearchAction = {
+        searchActive = false
+        searchQuery = ""
+        viewModel.searchQuery = ""
+        viewModel.updateSearchQuery()
+        viewModel.resetComicList()
+    }
 
     LaunchedEffect(lazyGridScrollState.canScrollForward) {
         val totalItemsCount = viewModel.comicList.size
         val lastVisibleItemIndex = lazyGridScrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 1
-        print(lastVisibleItemIndex)
-        print(totalItemsCount)
+        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 8
 
         if (nearEndOfList) {
             viewModel.loadNextPage()
@@ -95,31 +123,73 @@ fun DiscoverScreen(
         ) {
             item(span = { GridItemSpan(3) }) {
                 DockedSearchBar(
-                    query = searchQueryState.value,
-                    onQueryChange = { query -> searchQueryState.value = query },
-                    onSearch = { searchedActionState.value = true },
+                    query = searchQuery,
+                    onQueryChange = { query ->
+                        searchQuery = query
+                        if (query == "") {
+                            onClearSearchAction()
+                        }
+                    },
+                    onSearch = {
+                        if (searchQuery.isNotBlank()) {
+                            onSearchAction()
+                        }
+                    },
                     active = false,
                     onActiveChange = { },
-                    placeholder = { Text(searchHintState.value) },
+                    placeholder = { Text(searchHint) },
                     leadingIcon = {
-                        IconButton(onClick = { searchedActionState.value = true }) {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                        if (searchActive) {
+                            IconButton(
+                                onClick = { onClearSearchAction() }
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowBack,
+                                    contentDescription = "Cancel Search",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = {
+                                    if (searchQuery.isNotBlank()) {
+                                        onSearchAction()
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = "Search Icon",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
-                    }
+                    },
+                    trailingIcon = {
+                        if (searchActive)
+                            IconButton(
+                                onClick = {
+                                    searchQuery = ""
+                                }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear Search Query",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                    },
                 ) {}
             }
             item(span = { GridItemSpan(3) }) {
                 SortingToolbar(
-                    sortingMethods = sortingMethods,
+                    sortingMethods = sortingMethods.map { it.second },
                     onSortingMethodSelected = { index, sortingMethod ->
-                        // TODO: Implement sorting
+                        viewModel.sortingMethod = sortingMethods[index].first
                     },
-                    onAscendingClicked = {
-                        // TODO: Implement ascending sorting
+                    isSortingOrderDescending = isDescending,
+                    onSortingOrderClicked = { toggleResult ->
+                        isDescending = toggleResult
+                        viewModel.sortingOrder = if (isDescending) SortingOrder.DESC else SortingOrder.ASC
                     },
                     onFilterClicked = {
                         // TODO: Implement filtering
@@ -174,5 +244,4 @@ fun DiscoverScreen(
 @Composable
 fun DiscoverPreview() {
     DiscoverScreen()
-
 }

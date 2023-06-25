@@ -68,33 +68,42 @@ class ComicSearchQuery private constructor(
     }
 
     // Setters
-    internal fun setSearchQuery(searchQuery: String) {
+    internal fun setSearchQuery(searchQuery: String): ComicSearchQuery {
         this.searchQuery = searchQuery
+        return this
     }
 
-    internal fun setSortingMethod(sortingMethod: String) {
+    internal fun setSortingMethod(sortingMethod: String): ComicSearchQuery {
         this.sortingMethod = sortingMethod
+        return this
     }
 
-    internal fun setSortingOrder(sortingOrder: String) {
+    internal fun setSortingOrder(sortingOrder: String): ComicSearchQuery {
         this.sortingOrder = sortingOrder
+        return this
     }
 
-    internal fun setComicAmount(comicAmount: Int) {
+    internal fun setComicAmount(comicAmount: Int): ComicSearchQuery {
         this.comicAmount = comicAmount
+        return this
     }
 
-    internal fun setOffsetAmount(offsetAmount: Int) {
+    internal fun setOffsetAmount(offsetAmount: Int): ComicSearchQuery {
         this.offsetAmount = offsetAmount
+        return this
     }
 
-    internal fun setIncludedTags(includedTags: List<String>) {
+    internal fun setIncludedTags(includedTags: List<String>): ComicSearchQuery {
         this.includedTags = includedTags
+        return this
     }
 
-    internal fun setExcludedTags(excludedTags: List<String>) {
+    internal fun setExcludedTags(excludedTags: List<String>): ComicSearchQuery {
         this.excludedTags = excludedTags
-    }// Copy function
+        return this
+    }
+
+    // Copy function
     fun copy(
         searchQuery: String? = null,
         sortingMethod: String? = null,

@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens.components
+package com.inlurker.komiq.ui.screens.components.AnimatedComponents
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.inlurker.komiq.model.data.datamodel.Tag
+import com.inlurker.komiq.ui.screens.components.ComicTags
 
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)

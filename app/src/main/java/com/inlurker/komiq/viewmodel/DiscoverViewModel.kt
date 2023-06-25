@@ -6,10 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.inlurker.komiq.model.data.datamodel.Comic
-import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.model.data.mangadexapi.builders.ComicSearchQuery
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.viewmodel.paging.ListState
 
 class DiscoverViewModel : ViewModel() {
@@ -30,7 +30,7 @@ class DiscoverViewModel : ViewModel() {
 
     var listState by mutableStateOf(ListState.IDLE)
 
-    private val comicSearchQuery = ComicSearchQuery.Builder()
+    private var comicSearchQuery = ComicSearchQuery.Builder()
         .searchQuery(searchQuery)
         .sortingMethod(sortingMethod)
         .sortingOrder(sortingOrder)
@@ -43,7 +43,7 @@ class DiscoverViewModel : ViewModel() {
         .build()
 
 
-    private suspend fun getComics() {
+    suspend fun getComics() {
         if (isLoading || isPaginationExhausted) return
 
         try {
@@ -78,4 +78,23 @@ class DiscoverViewModel : ViewModel() {
         }
     }
 
+    fun resetComicList() {
+        comicList.clear()
+        currentPage = 1
+        isPaginationExhausted = false
+        isLoading = false
+    }
+
+    fun updateSearchQuery() {
+        comicSearchQuery
+            .setSearchQuery(searchQuery)
+            .setSortingMethod(sortingMethod)
+            .setSortingOrder(sortingOrder)
+            .setComicAmount(comicAmount)
+            .setOffsetAmount(offsetAmount)
+            .setIncludedTags(includedTags)
+            .setExcludedTags(excludedTags)
+            .setComicAmount(30)
+            .setOffsetAmount((currentPage - 1) * 30)
+    }
 }

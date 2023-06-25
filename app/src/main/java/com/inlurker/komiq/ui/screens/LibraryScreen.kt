@@ -3,7 +3,6 @@ package com.inlurker.komiq.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -11,6 +10,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,14 +48,41 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = viewModel()
 ) {
 
-    val sortingMethods = listOf("Last Updated", "Date Added")
+    val sortingMethods = listOf(
+        SortOption.LAST_ADDED to "Last Added",
+        SortOption.TITLE to  "Title",
+        SortOption.AUTHOR to "Author",
+        SortOption.YEAR to "Year"
+    )
 
+    var selectedSortingMethod by remember { mutableStateOf(SortOption.LAST_ADDED) }
+    var isDescending  by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
     var searchActive by remember { mutableStateOf(false) }
-    var searchHint by remember { mutableStateOf("") }
+    val searchHint = "Search comic"
 
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+
+
+    val filteredComics by remember(searchQuery, viewModel.comics, isDescending) {
+        mutableStateOf(
+            viewModel.comics.filter { comic ->
+                val searchQueryLowercase = searchQuery.lowercase()
+                comic.title.lowercase().contains(searchQueryLowercase) ||
+                        comic.altTitle.lowercase().contains(searchQueryLowercase) ||
+                        comic.authors.any { author -> author.lowercase().contains(searchQueryLowercase) }
+            }
+        )
+    }
+
+    val sortedComics = when (selectedSortingMethod) {
+        SortOption.LAST_ADDED -> filteredComics // No sorting needed since it's the default order
+        SortOption.TITLE -> filteredComics.sortedBy { comic -> comic.title }
+        SortOption.AUTHOR -> filteredComics.sortedBy { comic -> comic.authors.firstOrNull() }
+        SortOption.YEAR -> filteredComics.sortedBy { comic -> comic.year }
+    }.let { if (isDescending) it.reversed() else it }
+
     Scaffold(
         topBar = {
             LargeTopAppBarComponent(
@@ -79,44 +107,73 @@ fun LibraryScreen(
             item(span = { GridItemSpan(3) }) {
                 DockedSearchBar(
                     query = searchQuery,
-                    onQueryChange = { },
-                    onSearch = { searchActive = false },
-                    active = searchActive,
+                    onQueryChange = { query ->
+                        searchQuery = query
+                        searchActive = query != ""
+                    },
+                    onSearch = {},
+                    active = false,
                     onActiveChange = { },
                     placeholder = { Text(searchHint) },
                     leadingIcon = {
-                        IconButton(
-                            onClick = { /*TODO*/ },
-                            modifier = Modifier
-                                .fillMaxHeight()
-                        ) {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                        if (searchActive) {
+                            IconButton(
+                                onClick = {
+                                    searchQuery = ""
+                                    searchActive = false
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowBack,
+                                    contentDescription = "Cancel Search",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = {}
+                            ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = "Search Icon",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
-                    }
-                )
-                {}
+                    },
+                    trailingIcon = {
+                        if (searchActive)
+                            IconButton(
+                                onClick = {
+                                    searchQuery = ""
+                                }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear Search Query",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                    },
+                ) {}
             }
             item(
                 span = { GridItemSpan(3) }
             ) {
                 SortingToolbar(
-                    sortingMethods = sortingMethods,
+                    sortingMethods = sortingMethods.map { it.second },
                     onSortingMethodSelected = { index, sortingMethod ->
-
+                        selectedSortingMethod = sortingMethods[index].first
                     },
-                    onAscendingClicked = {
-
+                    isSortingOrderDescending = isDescending,
+                    onSortingOrderClicked = { toggleResult ->
+                        isDescending = toggleResult
                     },
                     onFilterClicked = {
-
+                        // TODO: Implement filtering
                     }
                 )
             }
-            items(viewModel.comics) { comic ->
+            items(sortedComics) { comic ->
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
@@ -133,6 +190,12 @@ fun LibraryScreen(
     }
 }
 
+enum class SortOption {
+    LAST_ADDED,
+    TITLE,
+    AUTHOR,
+    YEAR
+}
 
 @Preview
 @Composable

@@ -64,9 +64,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.navigation.popUpToTop
-import com.inlurker.komiq.ui.screens.components.AddToLibraryButton
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.AddToLibraryButton
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.CollapsibleDescriptionComponent
 import com.inlurker.komiq.ui.screens.components.ChapterListElement
-import com.inlurker.komiq.ui.screens.components.CollapsibleDescriptionComponent
 import com.inlurker.komiq.ui.screens.helper.ColorHelper.adjustLuminance
 import com.inlurker.komiq.ui.screens.helper.ColorHelper.generateColorPalette
 import com.inlurker.komiq.ui.screens.helper.Formatters.pluralize
@@ -298,7 +298,9 @@ fun ComicDetailScreen(
             item {
                 Button(
                     onClick = {
-                        /* TODO */
+                        navController.navigate("reader/${chapterList.last().id}") {
+                            popUpToTop(navController)
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(vibrantColor),
                     modifier = Modifier

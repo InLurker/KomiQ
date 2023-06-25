@@ -1,4 +1,4 @@
-package com.inlurker.komiq.ui.screens.components
+package com.inlurker.komiq.ui.screens.components.AnimatedComponents
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
