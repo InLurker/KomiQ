@@ -1,6 +1,5 @@
 package com.inlurker.komiq.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,7 +91,7 @@ fun DiscoverScreen(
     LaunchedEffect(lazyGridScrollState.canScrollForward) {
         val totalItemsCount = viewModel.comicList.size
         val lastVisibleItemIndex = lazyGridScrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 8
+        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 0
 
         if (nearEndOfList) {
             viewModel.loadNextPage()
@@ -110,7 +109,6 @@ fun DiscoverScreen(
         },
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .background(MaterialTheme.colorScheme.background)
     ) { paddingValue ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),

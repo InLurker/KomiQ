@@ -19,7 +19,7 @@ fun chapterAdapterToChapter(mangadexChapter: MangadexChapterAdapter): Chapter {
     return Chapter(
         id = mangadexChapter.id,
         volume = chapterAttributes.volume,
-        chapter = chapterAttributes.chapter,
+        chapter = chapterAttributes.chapter ?: 0f,
         title = chapterAttributes.title ?: "No title",
         publishAt = LocalDateTime.parse(chapterAttributes.publishAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         pages = chapterAttributes.pages,

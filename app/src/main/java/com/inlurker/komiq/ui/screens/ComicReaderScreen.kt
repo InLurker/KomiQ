@@ -344,7 +344,7 @@ fun ComicReaderScreen(
                                 )
                                 Text(
                                     text = formatChapterVolume(
-                                        volumeNumber = viewModel.chapter?.volume ?: 0,
+                                        volumeNumber = viewModel.chapter?.volume ?: 0f,
                                         chapterNumber = viewModel.chapter?.chapter ?: 0f
                                     ),
                                     style = MaterialTheme.typography.titleSmall,

@@ -29,7 +29,7 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChapterListElement(
-    volumeNumber: Int,
+    volumeNumber: Float,
     chapterNumber: Float,
     chapterName: String,
     uploadDate: LocalDateTime,

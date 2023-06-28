@@ -13,8 +13,8 @@ data class MangadexChapterAdapter(
 
 @JsonClass(generateAdapter = true)
 data class MangadexChapterAttributesAdapter(
-    val volume: Int?,
-    val chapter: Float,
+    val volume: Float?,
+    val chapter: Float?,
     val title: String?,
     val publishAt: String,
     val pages: Int

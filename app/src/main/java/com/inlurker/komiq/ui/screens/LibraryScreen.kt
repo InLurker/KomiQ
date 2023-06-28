@@ -1,6 +1,5 @@
 package com.inlurker.komiq.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -94,7 +93,6 @@ fun LibraryScreen(
         },
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .background(MaterialTheme.colorScheme.background)
     ) { paddingValue ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -166,6 +167,13 @@ fun ComicDetailScreen(
                             }
                         },
                         actions = {
+                            IconButton(onClick = { }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = "Search",
+                                    tint = topAppBarIconButtonColor
+                                )
+                            }
                             IconButton(onClick = { }) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
@@ -354,7 +362,7 @@ fun ComicDetailScreen(
                 if (chapterList.isNotEmpty()) {
                     chapterList.forEach { chapter ->
                         ChapterListElement(
-                            volumeNumber = chapter.volume ?: 0,
+                            volumeNumber = chapter.volume ?: 0f,
                             chapterNumber = chapter.chapter,
                             chapterName = chapter.title,
                             uploadDate = chapter.publishAt,
