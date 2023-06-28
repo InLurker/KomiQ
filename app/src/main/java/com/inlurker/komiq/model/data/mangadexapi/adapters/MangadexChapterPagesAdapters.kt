@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class ChapterPagesResponse(
     val result: String,
-    val baseUrl: String,
+    val baseUrl: String?,
     val chapter: ChapterPages
 )
 

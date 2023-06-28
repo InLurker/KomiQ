@@ -185,11 +185,15 @@ fun DiscoverScreen(
                     sortingMethods = sortingMethods.map { it.second },
                     onSortingMethodSelected = { index, sortingMethod ->
                         viewModel.sortingMethod = sortingMethods[index].first
+                        viewModel.updateSearchQuery()
+                        viewModel.resetComicList()
                     },
                     isSortingOrderDescending = isDescending,
                     onSortingOrderClicked = { toggleResult ->
                         isDescending = toggleResult
-                        viewModel.sortingOrder = if (isDescending) SortingOrder.DESC else SortingOrder.ASC
+                        viewModel.sortingOrder = if (toggleResult) SortingOrder.DESC else SortingOrder.ASC
+                        viewModel.updateSearchQuery()
+                        viewModel.resetComicList()
                     },
                     onFilterClicked = {
                         // TODO: Implement filtering
