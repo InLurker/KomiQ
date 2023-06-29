@@ -91,7 +91,7 @@ fun DiscoverScreen(
     LaunchedEffect(lazyGridScrollState.canScrollForward) {
         val totalItemsCount = viewModel.comicList.size
         val lastVisibleItemIndex = lazyGridScrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 0
+        val nearEndOfList = lastVisibleItemIndex >= totalItemsCount - 10
 
         if (nearEndOfList) {
             viewModel.loadNextPage()
