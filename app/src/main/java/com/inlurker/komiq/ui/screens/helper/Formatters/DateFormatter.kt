@@ -10,7 +10,7 @@ fun formatDate(dateTime: LocalDateTime): String {
     val now = LocalDateTime.now()
     val daysDifference = ChronoUnit.DAYS.between(dateTime, now)
 
-    return if (daysDifference in 1..7) {
+    return if (daysDifference in 0..7) {
         val relativeTimeSpan = DateUtils.getRelativeTimeSpanString(
             dateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
         )

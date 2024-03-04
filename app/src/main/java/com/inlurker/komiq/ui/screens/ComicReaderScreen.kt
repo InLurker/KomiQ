@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -77,9 +78,9 @@ fun ComicReaderScreen(
     val context = LocalContext.current
 
     val chapterPages = viewModel.chapterPages
-    val pagerState = rememberPagerState(initialPage = 0) // Adjust initial page index
     var currentPage by remember { mutableStateOf(1) } // Start from page 1
     val totalPages = chapterPages?.data?.size ?: 1
+    val pagerState = rememberPagerState { totalPages } // Adjust initial page index
 
     var selectedReadingDirection by remember { mutableStateOf(ReadingDirection.RightToLeft) }
     val sliderDirection by remember(selectedReadingDirection) {
@@ -256,7 +257,7 @@ fun ComicReaderScreen(
                         ) {
                             Text(text = "Greyscale")
                         }
-                        Divider(
+                        HorizontalDivider(
                             color = MaterialTheme.colorScheme.outline,
                             thickness = 1.dp,
                             modifier = Modifier
@@ -299,7 +300,6 @@ fun ComicReaderScreen(
                             ReadingDirection.LeftToRight, ReadingDirection.RightToLeft ->
                                 HorizontalPageReader(
                                     pagerState = pagerState,
-                                    totalPages = totalPages,
                                     chapterPages = chapterPages,
                                     colorFilter = colorFilter,
                                     readingDirection = selectedReadingDirection,
@@ -309,7 +309,6 @@ fun ComicReaderScreen(
                             ReadingDirection.TopToBottom, ReadingDirection.BottomToTop ->
                                 VerticalPageReader(
                                     pagerState = pagerState,
-                                    totalPages = totalPages,
                                     chapterPages = chapterPages,
                                     colorFilter = colorFilter,
                                     readingDirection = selectedReadingDirection,

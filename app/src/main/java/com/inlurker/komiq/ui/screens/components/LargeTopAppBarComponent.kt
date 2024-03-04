@@ -1,5 +1,6 @@
 package com.inlurker.komiq.ui.screens.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MoreVert
@@ -10,6 +11,10 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.inlurker.komiq.ui.screens.LibraryScreen
 
@@ -17,8 +22,8 @@ import com.inlurker.komiq.ui.screens.LibraryScreen
 @Composable
 fun LargeTopAppBarComponent(
     title: String,
-    onHistoryClick: () -> Unit,
-    onMoreClick: () -> Unit,
+    onHistoryDropdown: @Composable () -> Unit,
+    onMoreDropdown: @Composable () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior
 ) =
     LargeTopAppBar(
@@ -28,17 +33,29 @@ fun LargeTopAppBarComponent(
             )
         },
         actions = {
-            IconButton(onClick = onHistoryClick) {
-                Icon(
-                    imageVector = Icons.Outlined.History,
-                    contentDescription = "History"
-                )
+            Box {
+                var isHistoryClicked by remember { mutableStateOf(false) }
+                IconButton(onClick = { isHistoryClicked = !isHistoryClicked }) {
+                    Icon(
+                        imageVector = Icons.Outlined.History,
+                        contentDescription = "History"
+                    )
+                }
+                if (isHistoryClicked) {
+                    onHistoryDropdown()
+                }
             }
-            IconButton(onClick = onMoreClick) {
-                Icon(
-                    imageVector = Icons.Outlined.MoreVert,
-                    contentDescription = "More"
-                )
+            Box {
+                var isMoreClicked by remember { mutableStateOf(false) }
+                IconButton(onClick = { isMoreClicked = !isMoreClicked }) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = "More"
+                    )
+                }
+                if (isMoreClicked) {
+                    onMoreDropdown()
+                }
             }
         },
         scrollBehavior = scrollBehavior

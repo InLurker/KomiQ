@@ -19,7 +19,6 @@ import com.inlurker.komiq.ui.screens.helper.ReadingDirection
 @Composable
 fun VerticalPageReader(
     pagerState: PagerState,
-    totalPages: Int,
     chapterPages: ChapterPages?,
     colorFilter: ColorFilter,
     readingDirection: ReadingDirection,
@@ -27,7 +26,6 @@ fun VerticalPageReader(
 ) {
     VerticalPager(
         state = pagerState,
-        pageCount = totalPages,
         reverseLayout = readingDirection == ReadingDirection.BottomToTop,
         horizontalAlignment = Alignment.CenterHorizontally
     ) { page ->

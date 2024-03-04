@@ -51,8 +51,6 @@ object ComicRepository {
         }
     }
 
-
-
     fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
         val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()
 
@@ -69,6 +67,7 @@ object ComicRepository {
 
         emit(comicList)
     }
+
     suspend fun getComicChapterList(comicId: String): List<Chapter> {
         val url = "https://api.mangadex.org/manga/$comicId/feed?"
         val request = Request.Builder()

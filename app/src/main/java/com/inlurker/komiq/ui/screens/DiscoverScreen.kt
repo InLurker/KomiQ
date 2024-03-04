@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
@@ -44,6 +44,7 @@ import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ComicCollecti
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
+import com.inlurker.komiq.ui.screens.helper.LanguageHelper.ComicLanguageSetting
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
 
@@ -98,12 +99,14 @@ fun DiscoverScreen(
         }
     }
 
+    var showFilter by remember { mutableStateOf(ComicLanguageSetting.English) }
+
     Scaffold(
         topBar = {
             LargeTopAppBarComponent(
                 title = "Explore",
-                onHistoryClick = { /*TODO*/ },
-                onMoreClick = { /*TODO*/ },
+                onHistoryDropdown = { /*TODO*/ },
+                onMoreDropdown = { /*TODO*/ },
                 scrollBehavior = scrollBehavior
             )
         },
@@ -142,7 +145,7 @@ fun DiscoverScreen(
                                 onClick = { onClearSearchAction() }
                             ) {
                                 Icon(
-                                    Icons.Default.ArrowBack,
+                                    Icons.AutoMirrored.Outlined.ArrowBack,
                                     contentDescription = "Cancel Search",
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -194,7 +197,7 @@ fun DiscoverScreen(
                         viewModel.resetComicList()
                     },
                     onFilterClicked = {
-                        // TODO: Implement filtering
+                        
                     }
                 )
             }
@@ -242,7 +245,7 @@ fun DiscoverScreen(
 
 
 
-@Preview(showBackground = true)
+@Preview(apiLevel = 33, showBackground = true)
 @Composable
 fun DiscoverPreview() {
     DiscoverScreen()

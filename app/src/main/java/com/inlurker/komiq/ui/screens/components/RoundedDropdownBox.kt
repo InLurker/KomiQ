@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 
 @Composable
 fun RoundedDropdownBox(
@@ -60,10 +61,9 @@ fun RoundedDropdownBox(
                     .align(Alignment.CenterVertically)
             )
             Spacer(modifier = Modifier.width(3.dp))
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Dropdown",
-                tint = MaterialTheme.colorScheme.onSurface
+            RotatingIcon(
+                isRotated = expanded,
+                imageVector = Icons.Default.ArrowDropDown
             )
         }
         DropdownMenu(

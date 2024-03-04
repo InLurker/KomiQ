@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingExpandIcon
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 
 @Composable
 fun DropdownSettings(
@@ -43,7 +45,10 @@ fun DropdownSettings(
             text = options[selectedOption],
             style = MaterialTheme.typography.labelLarge
         )
-        RotatingExpandIcon(isExpanded = dropdownExpanded)
+        RotatingIcon(
+            isRotated = dropdownExpanded,
+            imageVector = Icons.Default.ExpandMore
+        )
         DropdownMenu(
             expanded = dropdownExpanded,
             onDismissRequest = { dropdownExpanded = false },

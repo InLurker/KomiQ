@@ -86,8 +86,8 @@ fun LibraryScreen(
         topBar = {
             LargeTopAppBarComponent(
                 title = "Library",
-                onHistoryClick = { /*TODO*/ },
-                onMoreClick = { /*TODO*/ },
+                onMoreDropdown = { /*TODO*/ },
+                onHistoryDropdown = { /*TODO*/ },
                 scrollBehavior = scrollBehavior
             )
         },

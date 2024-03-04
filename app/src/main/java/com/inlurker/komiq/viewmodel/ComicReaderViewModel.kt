@@ -25,4 +25,5 @@ class ComicReaderViewModel(
             chapterPages = ComicRepository.getChapterPages(chapterId)
         }
     }
+
 }

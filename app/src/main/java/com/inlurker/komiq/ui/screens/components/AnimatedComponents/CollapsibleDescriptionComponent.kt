@@ -63,14 +63,6 @@ fun CollapsibleDescriptionComponent(
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        animationSpec = tween(
-            durationMillis = 300,
-            easing = LinearOutSlowInEasing
-        )
-    )
-
     // Expand Animation
     val expandTransition = remember {
         expandVertically(
@@ -125,8 +117,8 @@ fun CollapsibleDescriptionComponent(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 FlowRow(
-                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .wrapContentWidth(Alignment.Start)
                         .clipToBounds()
@@ -168,13 +160,12 @@ fun CollapsibleDescriptionComponent(
                         fontWeight = FontWeight.Medium,
                         color = collapseTextButtonColor
                     )
-                    Icon(
+                    RotatingIcon(
+                        isRotated = isExpanded,
                         imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Expand more",
                         tint = collapseTextButtonColor,
                         modifier = Modifier
                             .size(18.dp)
-                            .rotate(rotationAngle)
                     )
                 }
             }
