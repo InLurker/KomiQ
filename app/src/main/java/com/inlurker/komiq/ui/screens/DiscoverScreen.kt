@@ -15,20 +15,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -43,10 +47,12 @@ import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
+import com.inlurker.komiq.ui.screens.components.SettingComponents.LanguageDropdownSettings
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
-import com.inlurker.komiq.ui.screens.helper.LanguageHelper.ComicLanguageSetting
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,8 +105,12 @@ fun DiscoverScreen(
         }
     }
 
-    var showFilter by remember { mutableStateOf(ComicLanguageSetting.English) }
+    val languageOptions = ComicLanguageSetting.getSortedByNativeName()
+    var selectedComicLanguageSetting by remember { mutableStateOf(ComicLanguageSetting.English) }
 
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var showBottomSheet by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             LargeTopAppBarComponent(
@@ -197,13 +207,13 @@ fun DiscoverScreen(
                         viewModel.resetComicList()
                     },
                     onFilterClicked = {
-                        
+                        showBottomSheet = true
                     }
                 )
             }
 
             // Comic list
-            itemsIndexed(viewModel.comicList) { index, comic ->
+            itemsIndexed(viewModel.comicList) { _, comic ->
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
@@ -238,6 +248,35 @@ fun DiscoverScreen(
                 Spacer(modifier = Modifier
                     .height(120.dp)
                 )
+            }
+        }
+
+        if (showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showBottomSheet = false
+                },
+                sheetState = sheetState
+            ) {
+                // Sheet content
+                val languageOptions = ComicLanguageSetting.getSortedByNativeName()
+                LanguageDropdownSettings(
+                    label = "Language:",
+                    options = languageOptions,
+                    currentSelection = selectedComicLanguageSetting,
+                    onLanguageSelected = { selectedLanguage ->
+                        selectedComicLanguageSetting = selectedLanguage
+                    }
+                )
+                Button(onClick = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showBottomSheet = false
+                        }
+                    }
+                }) {
+                    Text("Apply")
+                }
             }
         }
     }

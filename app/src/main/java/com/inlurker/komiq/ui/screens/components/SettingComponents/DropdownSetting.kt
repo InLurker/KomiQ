@@ -19,13 +19,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
 
 @Composable
-fun DropdownSettings(
+fun <T> SettingsDropdown(
     label: String,
-    options: List<String>,
-    selectedOption: Int,
+    options: List<T>,
+    currentSelection: T,
+    displayOption: (T) -> String, // Lambda function to convert option to String
     modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
     onOptionSelected: (Int) -> Unit
 ) {
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -42,27 +47,91 @@ fun DropdownSettings(
         )
         Spacer(Modifier.weight(1f))
         Text(
-            text = options[selectedOption],
+            text = displayOption(currentSelection),
             style = MaterialTheme.typography.labelLarge
         )
+        // Assuming RotatingIcon is defined elsewhere in your code
         RotatingIcon(
             isRotated = dropdownExpanded,
             imageVector = Icons.Default.ExpandMore
         )
-        DropdownMenu(
-            expanded = dropdownExpanded,
-            onDismissRequest = { dropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = { Text(text = option) },
-                    onClick = {
-                        onOptionSelected(index)
-                        dropdownExpanded = false
-                    }
-                )
-            }
+    }
+
+    DropdownMenu(
+        expanded = dropdownExpanded,
+        onDismissRequest = { dropdownExpanded = false },
+        modifier = dropdownModifier
+            .then(Modifier.fillMaxWidth())
+    ) {
+        options.forEachIndexed { index, option ->
+            DropdownMenuItem(
+                text = { Text(text = displayOption(option)) },
+                onClick = {
+                    onOptionSelected(index)
+                    dropdownExpanded = false
+                }
+            )
         }
     }
 }
+
+@Composable
+fun LanguageDropdownSettings(
+    label: String,
+    options: List<ComicLanguageSetting>,
+    currentSelection: ComicLanguageSetting,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onLanguageSelected: (ComicLanguageSetting) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.languageDisplayName() }, // Use the languageDisplayName function to display each language
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onLanguageSelected(options[index]) }
+    )
+}
+
+@Composable
+fun ReadingDirectionDropdownSettings(
+    label: String,
+    options: List<ReadingDirection>,
+    currentSelection: ReadingDirection,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onReadingDirectionSelected: (ReadingDirection) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.description }, // Use the languageDisplayName function to display each language
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onReadingDirectionSelected(options[index]) }
+    )
+}
+
+@Composable
+fun ReaderBackgroundDropdownSettings(
+    label: String,
+    options: List<ReaderBackground>,
+    currentSelection: ReaderBackground,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onReaderBackgroundSelected: (ReaderBackground) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.description }, // Use the languageDisplayName function to display each language
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onReaderBackgroundSelected(options[index]) }
+    )
+}
+

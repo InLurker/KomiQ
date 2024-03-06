@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,10 +61,12 @@ import com.inlurker.komiq.ui.screens.components.PageReaders.HorizontalPageReader
 import com.inlurker.komiq.ui.screens.components.PageReaders.VerticalPageReader
 import com.inlurker.komiq.ui.screens.components.SegmentedButton
 import com.inlurker.komiq.ui.screens.components.SegmentedButtonItem
-import com.inlurker.komiq.ui.screens.components.SettingComponents.DropdownSettings
+import com.inlurker.komiq.ui.screens.components.SettingComponents.ReaderBackgroundDropdownSettings
+import com.inlurker.komiq.ui.screens.components.SettingComponents.ReadingDirectionDropdownSettings
 import com.inlurker.komiq.ui.screens.components.SettingComponents.ReadingPreferencesSetting
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
 import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterVolume
-import com.inlurker.komiq.ui.screens.helper.ReadingDirection
 import com.inlurker.komiq.ui.theme.KomiQTheme
 import com.inlurker.komiq.viewmodel.ComicReaderViewModel
 
@@ -174,16 +175,7 @@ fun ComicReaderScreen(
 
     val scaffoldState = rememberBottomSheetScaffoldState()
 
-    var selectedBackgroundColor by remember { mutableStateOf(0) }
-    val backgroundOptions = listOf("Default", "Light", "Dark")
-
-    var selectedReadingLayout by remember { mutableStateOf(0) }
-    val readingLayoutOptions = listOf(
-        "Right to Left",
-        "Left to Right",
-        "Top to Bottom",
-        "Bottom to Top"
-    )
+    var selectedReaderBackground by remember { mutableStateOf(ReaderBackground.Default) }
 
     KomiQTheme(
         darkTheme = darkTheme
@@ -198,39 +190,30 @@ fun ComicReaderScreen(
                         .padding(horizontal = 32.dp)
                         .padding(bottom = 32.dp)
                 ) {
-                    DropdownSettings(
+                    ReaderBackgroundDropdownSettings(
                         label = "Background Colour",
-                        options = backgroundOptions,
-                        selectedOption = selectedBackgroundColor,
-                        onOptionSelected = { selectedColor ->
-                            selectedBackgroundColor = selectedColor
-                            darkTheme = when (selectedColor) {
-                                1 -> false
-                                2 -> true
+                        options = ReaderBackground.getOptionList(),
+                        currentSelection = selectedReaderBackground,
+                        onReaderBackgroundSelected = { selectedBackground ->
+                            selectedReaderBackground = selectedBackground
+                            darkTheme = when (selectedBackground) {
+                                ReaderBackground.Light -> false
+                                ReaderBackground.Dark -> true
                                 else -> isSystemDarkMode
                             }
                         },
                         modifier = Modifier
-                            .fillMaxWidth()
                             .height(48.dp)
                     )
 
-                    DropdownSettings(
+                    ReadingDirectionDropdownSettings(
                         label = "Reading Layout",
-                        options = readingLayoutOptions,
-                        selectedOption = selectedReadingLayout,
-                        onOptionSelected = { selectedLayout ->
-                            selectedReadingLayout = selectedLayout
-                            selectedReadingDirection = when (selectedLayout) {
-                                0 -> ReadingDirection.RightToLeft
-                                1 -> ReadingDirection.LeftToRight
-                                2 -> ReadingDirection.TopToBottom
-                                3 -> ReadingDirection.BottomToTop
-                                else -> ReadingDirection.BottomToTop
-                            }
+                        options = ReadingDirection.getOptionList(),
+                        currentSelection = selectedReadingDirection,
+                        onReadingDirectionSelected = { selectedDirection ->
+                            selectedReadingDirection = selectedDirection
                         },
                         modifier = Modifier
-                            .fillMaxWidth()
                             .height(48.dp)
                     )
 

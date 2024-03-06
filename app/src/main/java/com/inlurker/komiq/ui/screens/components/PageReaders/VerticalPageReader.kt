@@ -13,7 +13,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPages
 import com.inlurker.komiq.ui.screens.components.PageImage
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
-import com.inlurker.komiq.ui.screens.helper.ReadingDirection
+import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
