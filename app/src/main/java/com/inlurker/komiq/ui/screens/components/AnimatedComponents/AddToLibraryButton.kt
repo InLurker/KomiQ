@@ -78,7 +78,10 @@ fun AddToLibraryButton(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Crossfade(targetState = isInLibrary) { isInLibrary ->
+                Crossfade(
+                    label = "Add to Library Button",
+                    targetState = isInLibrary
+                ) { isInLibrary ->
                     if (isInLibrary) {
                         Icon(
                             imageVector = Icons.Filled.Bookmark,

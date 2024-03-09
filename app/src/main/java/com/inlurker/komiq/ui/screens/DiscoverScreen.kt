@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,7 +46,7 @@ import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
-import com.inlurker.komiq.ui.screens.components.SettingComponents.LanguageDropdownSettings
+import com.inlurker.komiq.ui.screens.components.SettingComponents.FilterSearchSetting
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
@@ -258,25 +257,16 @@ fun DiscoverScreen(
                 },
                 sheetState = sheetState
             ) {
-                // Sheet content
-                val languageOptions = ComicLanguageSetting.getSortedByNativeName()
-                LanguageDropdownSettings(
-                    label = "Language:",
-                    options = languageOptions,
-                    currentSelection = selectedComicLanguageSetting,
-                    onLanguageSelected = { selectedLanguage ->
-                        selectedComicLanguageSetting = selectedLanguage
-                    }
-                )
-                Button(onClick = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showBottomSheet = false
+                FilterSearchSetting(
+                    currentComicLanguageSetting = selectedComicLanguageSetting,
+                    onApplySettings = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
                         }
                     }
-                }) {
-                    Text("Apply")
-                }
+                )
             }
         }
     }
@@ -284,7 +274,7 @@ fun DiscoverScreen(
 
 
 
-@Preview(apiLevel = 33, showBackground = true)
+@Preview(showBackground = true)
 @Composable
 fun DiscoverPreview() {
     DiscoverScreen()

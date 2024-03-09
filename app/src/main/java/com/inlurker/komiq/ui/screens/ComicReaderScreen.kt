@@ -37,6 +37,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -79,7 +80,7 @@ fun ComicReaderScreen(
     val context = LocalContext.current
 
     val chapterPages = viewModel.chapterPages
-    var currentPage by remember { mutableStateOf(1) } // Start from page 1
+    var currentPage by remember { mutableIntStateOf(1) } // Start from page 1
     val totalPages = chapterPages?.data?.size ?: 1
     val pagerState = rememberPagerState { totalPages } // Adjust initial page index
 
@@ -98,9 +99,9 @@ fun ComicReaderScreen(
     val isSystemDarkMode = isSystemInDarkTheme()
     var darkTheme by remember { mutableStateOf(isSystemDarkMode) }
 
-    var eyeCare by remember { mutableStateOf(0) }
-    var brightnessScale by remember { mutableStateOf(100) }
-    var saturationScale by remember { mutableStateOf(100) }
+    var eyeCare by remember { mutableIntStateOf(0) }
+    var brightnessScale by remember { mutableIntStateOf(100) }
+    var saturationScale by remember { mutableIntStateOf(100) }
     var isGreyscaleSelected by remember { mutableStateOf(false) }
     var isInvertSelected by remember { mutableStateOf(false) }
 
@@ -203,7 +204,9 @@ fun ComicReaderScreen(
                             }
                         },
                         modifier = Modifier
-                            .height(48.dp)
+                            .height(48.dp),
+                        dropdownModifier = Modifier
+                            .padding(horizontal = 32.dp)
                     )
 
                     ReadingDirectionDropdownSettings(

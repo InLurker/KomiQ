@@ -135,7 +135,6 @@ chaquopy {
             install("numpy")
             install("tflite-runtime")
         }
-        buildPython("C:\\Users\\blank\\.pyenv\\pyenv-win\\versions\\3.8.10\\python.exe")
     }
     productFlavors { }
     sourceSets {

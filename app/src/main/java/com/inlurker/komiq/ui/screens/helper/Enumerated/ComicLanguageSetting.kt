@@ -2,7 +2,7 @@ package com.inlurker.komiq.ui.screens.helper.Enumerated
 
 
 enum class ComicLanguageSetting(val isoCode: String, val nativeName: String, val flagEmoji: String) {
-    Arabic("ar", "العربية", "\uD83C\uDDE6\uD83C\uDDEA"), // Saudi Arabia flag
+    Arabic("ar", "العربية", "\uD83C\uDDF8\uD83C\uDDE6"), // Saudi Arabia flag
     German("de", "Deutsch", "\uD83C\uDDE9\uD83C\uDDEA"), // Germany flag
     English("en", "English", "\uD83C\uDDEC\uD83C\uDDE7"), // United Kingdom flag
     Spanish("es", "Español", "\uD83C\uDDEA\uD83C\uDDF8"), // Spain flag

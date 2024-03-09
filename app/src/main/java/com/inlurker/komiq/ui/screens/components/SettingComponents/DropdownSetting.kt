@@ -3,7 +3,7 @@ package com.inlurker.komiq.ui.screens.components.SettingComponents
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.DropdownMenu
@@ -17,7 +17,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.toSize
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
@@ -34,12 +38,16 @@ fun <T> SettingsDropdown(
     onOptionSelected: (Int) -> Unit
 ) {
     var dropdownExpanded by remember { mutableStateOf(false) }
-
+    var rowSize by remember { mutableStateOf(Size.Zero) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clickable { dropdownExpanded = true }
+            .onGloballyPositioned { layoutCoordinates ->
+                rowSize = layoutCoordinates.size.toSize()
+            }
     ) {
+
         Text(
             text = "$label:",
             style = MaterialTheme.typography.labelLarge,
@@ -55,24 +63,26 @@ fun <T> SettingsDropdown(
             isRotated = dropdownExpanded,
             imageVector = Icons.Default.ExpandMore
         )
-    }
 
-    DropdownMenu(
-        expanded = dropdownExpanded,
-        onDismissRequest = { dropdownExpanded = false },
-        modifier = dropdownModifier
-            .then(Modifier.fillMaxWidth())
-    ) {
-        options.forEachIndexed { index, option ->
-            DropdownMenuItem(
-                text = { Text(text = displayOption(option)) },
-                onClick = {
-                    onOptionSelected(index)
-                    dropdownExpanded = false
-                }
-            )
+
+        DropdownMenu(
+            expanded = dropdownExpanded,
+            onDismissRequest = { dropdownExpanded = false },
+            modifier = dropdownModifier
+                .width(with(LocalDensity.current) { rowSize.width.toDp() })
+        ) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(text = displayOption(option)) },
+                    onClick = {
+                        onOptionSelected(index)
+                        dropdownExpanded = false
+                    }
+                )
+            }
         }
     }
+
 }
 
 @Composable
