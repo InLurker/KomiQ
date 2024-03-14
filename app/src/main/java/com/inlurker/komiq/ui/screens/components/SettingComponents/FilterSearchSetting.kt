@@ -22,18 +22,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.inlurker.komiq.model.data.mangadexapi.constants.GenreTag
+import com.inlurker.komiq.model.data.mangadexapi.constants.ThemeTag
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ToggleTags
-import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FilterSearchSetting (
+fun FilterSearchSetting(
     currentComicLanguageSetting: ComicLanguageSetting,
-    onApplySettings: () -> Unit,
-
+    currentGenreFilter: List<GenreTag>,
+    currentThemeFilter: List<ThemeTag>,
+    onApplySettings: (ComicLanguageSetting, List<GenreTag>, List<ThemeTag>) -> Unit
 ) {
     var tempComicLanguageSetting by remember { mutableStateOf(currentComicLanguageSetting) }
+    var tempGenreFilter = currentGenreFilter
+    var tempThemeFilter = currentThemeFilter
     Column {
         LazyColumn(
             userScrollEnabled = true,
@@ -41,10 +45,10 @@ fun FilterSearchSetting (
             modifier = Modifier
                 .padding(horizontal = 32.dp)
                 .padding(bottom = 32.dp)
-                .height(200.dp)
+                .height(260.dp)
         ) {
             item {
-                val languageOptions = ComicLanguageSetting.getSortedByNativeName()
+                val languageOptions = ComicLanguageSetting.asList()
                 LanguageDropdownSettings(
                     label = "Language",
                     options = languageOptions,
@@ -57,6 +61,7 @@ fun FilterSearchSetting (
                         .heightIn(max = 180.dp)
                 )
             }
+
             item {
                 Text(
                     text = "Genre",
@@ -70,12 +75,47 @@ fun FilterSearchSetting (
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     GenreTag.asList().forEach { genre ->
-                        var isButtonSelected by remember { mutableStateOf(false) }
+                        var isButtonSelected by  remember { mutableStateOf(tempGenreFilter.contains(genre)) }
                         ToggleTags(
                             label = genre.description,
                             isSelected = isButtonSelected,
-                            onStateChange = { changeResult ->
-                                isButtonSelected = changeResult
+                            onStateChange = { isSelected ->
+                                isButtonSelected = isSelected
+                                if (isSelected) {
+                                    if (!tempGenreFilter.contains(genre)) tempGenreFilter = tempGenreFilter.plus(genre)
+                                } else {
+                                    tempGenreFilter = tempGenreFilter.minus(genre)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "Theme",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            item {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ThemeTag.asList().forEach { theme ->
+                        var isButtonSelected by remember { mutableStateOf(tempThemeFilter.contains(theme)) }
+                        ToggleTags(
+                            label = theme.description,
+                            isSelected = isButtonSelected,
+                            onStateChange = { isSelected ->
+                                isButtonSelected = isSelected
+                                if (isSelected) {
+                                    if (!tempThemeFilter.contains(theme)) tempThemeFilter = tempThemeFilter.plus(theme)
+                                } else {
+                                    tempThemeFilter = tempThemeFilter.minus(theme)
+                                }
                             }
                         )
                     }
@@ -84,7 +124,15 @@ fun FilterSearchSetting (
         }
         Row {
             Spacer(Modifier.weight(1f))
-            Button(onClick = onApplySettings) {
+            Button(
+                onClick = {
+                    onApplySettings(
+                        tempComicLanguageSetting,
+                        tempGenreFilter,
+                        tempThemeFilter
+                    )
+                }
+            ) {
                 Text("Apply")
             }
         }
@@ -97,7 +145,9 @@ fun FilterSearchSetting (
 fun PreviewFilterSearchSetting() {
     FilterSearchSetting(
         currentComicLanguageSetting = ComicLanguageSetting.English,
-        onApplySettings = {
+        currentGenreFilter = listOf(),
+        currentThemeFilter = listOf(),
+        onApplySettings = { _, _, _ ->
 
         }
     )

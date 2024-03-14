@@ -7,8 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.mangadexapi.builders.ComicSearchQuery
+import com.inlurker.komiq.model.data.mangadexapi.constants.GenreTag
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.mangadexapi.constants.ThemeTag
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.viewmodel.paging.ListState
 
@@ -22,22 +25,23 @@ class DiscoverViewModel : ViewModel() {
     var searchQuery by mutableStateOf("")
     var sortingMethod by mutableStateOf(MangaOrderOptions.FOLLOWED_COUNT)
     var sortingOrder by mutableStateOf(SortingOrder.DESC)
-    var comicAmount = 30
+    val comicAmount = 30
     var offsetAmount by mutableStateOf(0)
-    var includedTags by mutableStateOf(emptyList<String>())
-    var excludedTags by mutableStateOf(emptyList<String>())
+    var comicLanguageSetting by mutableStateOf(ComicLanguageSetting.English)
+    var genreFilter by mutableStateOf(emptyList<GenreTag>())
+    var themeFilter by mutableStateOf(emptyList<ThemeTag>())
 
 
     var listState by mutableStateOf(ListState.IDLE)
 
     private var comicSearchQuery = ComicSearchQuery.Builder()
         .searchQuery(searchQuery)
+        .comicLanguage(comicLanguageSetting)
         .sortingMethod(sortingMethod)
         .sortingOrder(sortingOrder)
         .comicAmount(comicAmount)
         .offsetAmount(offsetAmount)
-        .includedTags(includedTags)
-        .excludedTags(excludedTags)
+        .includedTags(genreFilter.map { it.hash } + themeFilter.map { it.hash })
         .comicAmount(30)
         .offsetAmount((currentPage - 1) * 30)
         .build()
@@ -53,7 +57,7 @@ class DiscoverViewModel : ViewModel() {
             val updatedComicSearchQuery =
                 comicSearchQuery.copy(offsetAmount = (currentPage - 1) * 30)
 
-            ComicRepository.getComicList(updatedComicSearchQuery)
+            ComicRepository.getComicList(updatedComicSearchQuery, comicLanguageSetting)
                 .collect { comics ->
                     if (comics.isNotEmpty()) {
                         comicList.addAll(comics)
@@ -88,12 +92,12 @@ class DiscoverViewModel : ViewModel() {
     fun updateSearchQuery() {
         comicSearchQuery
             .setSearchQuery(searchQuery)
+            .setComicLanguage(comicLanguageSetting)
             .setSortingMethod(sortingMethod)
             .setSortingOrder(sortingOrder)
             .setComicAmount(comicAmount)
             .setOffsetAmount(offsetAmount)
-            .setIncludedTags(includedTags)
-            .setExcludedTags(excludedTags)
+            .setIncludedTags(genreFilter.map { it.hash })
             .setComicAmount(30)
             .setOffsetAmount((currentPage - 1) * 30)
     }

@@ -35,7 +35,7 @@ object ComicRepository {
         val database = ComicDatabase.getDatabase(context)
         comicDao = database.comicDao()
     }
-    suspend fun getComic(comicId: String): Comic? {
+    suspend fun getComic(comicId: String, languageSetting: ComicLanguageSetting): Comic? {
         val url = "https://api.mangadex.org/manga/$comicId?includes[]=author&includes[]=artist&includes[]=cover_art"
         val request = Request.Builder().url(url).get().build()
 
@@ -44,14 +44,14 @@ object ComicRepository {
 
         return performMangadexApiRequest(request, adapter)?.run {
             if (result == "ok") {
-                data?.let { mangadexDataAdapterToManga(it) }
+                data?.let { mangadexDataAdapterToManga(it, languageSetting) }
             } else {
                 null
             }
         }
     }
 
-    fun getComicList(comicSearchQuery: ComicSearchQuery): Flow<List<Comic>> = flow {
+    fun getComicList(comicSearchQuery: ComicSearchQuery, languageSetting: ComicLanguageSetting): Flow<List<Comic>> = flow {
         val request = Request.Builder().url(comicSearchQuery.toUrlString()).get().build()
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -59,7 +59,7 @@ object ComicRepository {
 
         val comicList = performMangadexApiRequest(request, adapter)?.run {
             if (result == "ok") {
-                data?.let { mangaAdapterListToComicList(it) }
+                data?.let { mangaAdapterListToComicList(it, languageSetting) }
             } else {
                 emptyList()
             }
@@ -68,7 +68,7 @@ object ComicRepository {
         emit(comicList)
     }
 
-    suspend fun getComicChapterList(comicId: String): List<Chapter> {
+    suspend fun getComicChapterList(comicId: String, languageSetting: ComicLanguageSetting): List<Chapter> {
         val url = "https://api.mangadex.org/manga/$comicId/feed?"
         val request = Request.Builder()
             .url(url)
@@ -88,8 +88,8 @@ object ComicRepository {
             val urlWithQueryParams = url.toHttpUrlOrNull()!!.newBuilder()
                 .addQueryParameter("limit", limit.toString())
                 .addQueryParameter("offset", offset.toString())
-                .addQueryParameter("order[chapter]=", "desc")
-                .addQueryParameter("translatedLanguage[]", "en")
+                .addQueryParameter("order[chapter]", "desc")
+                .addQueryParameter("translatedLanguage[]", languageSetting.isoCode)
                 .addQueryParameter("includes[]", "scanlation_group")
                 .build()
 

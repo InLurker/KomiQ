@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.BottomNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.screens.ComicDetailScreen
@@ -29,11 +30,17 @@ fun NavigationGraph(navController: NavHostController) {
         }
         composable(
             route = ComicNavigationScreenModel.Detail.route,
-            arguments = listOf(navArgument("comicId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("comicId") { type = NavType.StringType },
+                navArgument("language") { type = NavType.StringType },
+            )
         ) { backStackEntry ->
             backStackEntry.arguments?.let { argument ->
                 argument.getString("comicId")?.let { comicId ->
-                    ComicDetailScreen(navController, ComicDetailViewModel(comicId))
+                    argument.getString("language")?.let { language ->
+                        val languageSetting = ComicLanguageSetting.fromIsoCode(language)!!
+                        ComicDetailScreen(navController, ComicDetailViewModel(comicId, languageSetting))
+                    }
                 }
             }
         }

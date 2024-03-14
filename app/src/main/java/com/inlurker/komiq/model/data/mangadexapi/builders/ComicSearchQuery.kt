@@ -2,9 +2,11 @@ package com.inlurker.komiq.model.data.mangadexapi.builders
 
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 
 class ComicSearchQuery private constructor(
     var searchQuery: String,
+    var comicLanguage: ComicLanguageSetting,
     var sortingMethod: String,
     var sortingOrder: String,
     var comicAmount: Int,
@@ -14,6 +16,7 @@ class ComicSearchQuery private constructor(
 ) {
     class Builder {
         private var searchQuery: String = ""
+        private var comicLanguage: ComicLanguageSetting = ComicLanguageSetting.Korean
         private var sortingMethod: String = MangaOrderOptions.FOLLOWED_COUNT
         private var sortingOrder: String = SortingOrder.DESC
         private var comicAmount: Int = 30
@@ -22,6 +25,7 @@ class ComicSearchQuery private constructor(
         private var excludedTags: List<String> = emptyList()
 
         fun searchQuery(searchQuery: String) = apply { this.searchQuery = searchQuery }
+        fun comicLanguage(comicLanguage: ComicLanguageSetting) = apply { this.comicLanguage = comicLanguage }
         fun sortingMethod(sortingMethod: String) = apply { this.sortingMethod = sortingMethod }
         fun sortingOrder(sortingOrder: String) = apply { this.sortingOrder = sortingOrder }
         fun comicAmount(comicAmount: Int) = apply { this.comicAmount = comicAmount }
@@ -31,6 +35,7 @@ class ComicSearchQuery private constructor(
 
         fun build() = ComicSearchQuery(
             searchQuery,
+            comicLanguage,
             sortingMethod,
             sortingOrder,
             comicAmount,
@@ -55,12 +60,14 @@ class ComicSearchQuery private constructor(
             queryParams.add("excludedTags[]=$tag")
         }
 
+        queryParams.add("availableTranslatedLanguage[]=${comicLanguage.isoCode}")
         queryParams.add("limit=$comicAmount")
         queryParams.add("offset=$offsetAmount")
         queryParams.add("order[$sortingMethod]=$sortingOrder")
         queryParams.add("includes[]=author")
         queryParams.add("includes[]=artist")
         queryParams.add("includes[]=cover_art")
+        queryParams.add("hasAvailableChapters=true")
 
         val queryString = queryParams.joinToString("&")
 
@@ -70,6 +77,11 @@ class ComicSearchQuery private constructor(
     // Setters
     internal fun setSearchQuery(searchQuery: String): ComicSearchQuery {
         this.searchQuery = searchQuery
+        return this
+    }
+
+    internal fun setComicLanguage(comicLanguage: ComicLanguageSetting): ComicSearchQuery {
+        this.comicLanguage = comicLanguage
         return this
     }
 
@@ -106,6 +118,7 @@ class ComicSearchQuery private constructor(
     // Copy function
     fun copy(
         searchQuery: String? = null,
+        comicLanguage: ComicLanguageSetting? = null,
         sortingMethod: String? = null,
         sortingOrder: String? = null,
         comicAmount: Int? = null,
@@ -115,6 +128,7 @@ class ComicSearchQuery private constructor(
     ): ComicSearchQuery {
         return ComicSearchQuery(
             searchQuery ?: this.searchQuery,
+            comicLanguage ?: this.comicLanguage,
             sortingMethod ?: this.sortingMethod,
             sortingOrder ?: this.sortingOrder,
             comicAmount ?: this.comicAmount,

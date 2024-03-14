@@ -2,6 +2,7 @@ package com.inlurker.komiq.model.data.datamodel
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import java.time.LocalDateTime
 
 @Entity
@@ -15,6 +16,7 @@ data class Comic(
     val title: String = "Comic Title",
     val altTitle: String = "Comic Alt title",
     val description: String = "Comic Description",
+    val languageSetting: ComicLanguageSetting = ComicLanguageSetting.English,
     val originalLanguage: String = "language",
     val publicationDemographic: String? = null,
     val status: String = "status",

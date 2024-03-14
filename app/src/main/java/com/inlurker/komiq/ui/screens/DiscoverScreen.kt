@@ -48,7 +48,6 @@ import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
 import com.inlurker.komiq.ui.screens.components.SettingComponents.FilterSearchSetting
 import com.inlurker.komiq.ui.screens.components.SortingToolbar
-import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
@@ -79,20 +78,24 @@ fun DiscoverScreen(
 
     val lazyGridScrollState = rememberLazyGridState()
 
+    val refreshSearchAction = {
+        viewModel.updateSearchQuery()
+        viewModel.resetComicList()
+    }
+
     val onSearchAction= {
         searchActive = true
         viewModel.searchQuery = searchQuery
-        viewModel.updateSearchQuery()
-        viewModel.resetComicList()
+        refreshSearchAction()
     }
 
     val onClearSearchAction = {
         searchActive = false
         searchQuery = ""
         viewModel.searchQuery = ""
-        viewModel.updateSearchQuery()
-        viewModel.resetComicList()
+        refreshSearchAction()
     }
+
 
     LaunchedEffect(lazyGridScrollState.canScrollForward) {
         val totalItemsCount = viewModel.comicList.size
@@ -103,9 +106,6 @@ fun DiscoverScreen(
             viewModel.loadNextPage()
         }
     }
-
-    val languageOptions = ComicLanguageSetting.getSortedByNativeName()
-    var selectedComicLanguageSetting by remember { mutableStateOf(ComicLanguageSetting.English) }
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -216,7 +216,7 @@ fun DiscoverScreen(
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
-                        navController.navigate("detail/${comic.id}") {
+                        navController.navigate("detail/${comic.languageSetting.isoCode+ "_" + comic.id}") {
                             popUpToTop(navController)
                         }
                     }
@@ -258,12 +258,24 @@ fun DiscoverScreen(
                 sheetState = sheetState
             ) {
                 FilterSearchSetting(
-                    currentComicLanguageSetting = selectedComicLanguageSetting,
-                    onApplySettings = {
+                    currentComicLanguageSetting = viewModel.comicLanguageSetting,
+                    currentGenreFilter = viewModel.genreFilter,
+                    currentThemeFilter = viewModel.themeFilter,
+                    onApplySettings = { selectedLanguage, selectedGenre, selectedTheme ->
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             if (!sheetState.isVisible) {
                                 showBottomSheet = false
                             }
+                        }
+                        if (viewModel.comicLanguageSetting != selectedLanguage ||
+                            viewModel.genreFilter != selectedGenre ||
+                            viewModel.themeFilter != selectedTheme
+                        ) {
+                            viewModel.comicLanguageSetting = selectedLanguage
+                            viewModel.genreFilter = selectedGenre
+                            viewModel.themeFilter = selectedTheme
+
+                            refreshSearchAction()
                         }
                     }
                 )

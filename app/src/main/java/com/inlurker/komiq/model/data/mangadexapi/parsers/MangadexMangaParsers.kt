@@ -4,23 +4,24 @@ package com.inlurker.komiq.model.data.mangadexapi.parsers
 import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.datamodel.Tag
 import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexDataAdapter
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
+fun mangadexDataAdapterToManga(data: MangadexDataAdapter, languageSetting: ComicLanguageSetting): Comic {
     val attributes = data.attributes
 
     val title = attributes.title.values.firstOrNull() ?: "No Comic Title"
 
     // Parse altTitle
-    val altTitle = findAltTitle(title, attributes.altTitles)
+    val altTitle = findAltTitle(title, attributes.altTitles, languageSetting)
 
     // Parse description
-    val description = findDescription(attributes.description, attributes.altTitles)
+    val description = findDescription(attributes.description, attributes.altTitles, languageSetting)
     val tagList = mutableListOf<Tag>()
 
     attributes.tags.forEach { tagEntry ->
-        tagEntry.attributes.name.get("en")?.let { name ->
+        tagEntry.attributes.name.get(languageSetting.isoCode)?.let { name ->
             tagList.add(
                 Tag(
                     name = name,
@@ -65,26 +66,28 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter): Comic {
     )
 }
 
-private fun findAltTitle(title: String, altTitles: List<Map<String, String>>): String {
+private fun findAltTitle(title: String, altTitles: List<Map<String, String>>, languageSetting: ComicLanguageSetting): String {
     if (altTitles.isEmpty()) {
         return "No alternative titles"
     }
-    val englishAltTitles = altTitles.filter { it.containsKey("en") && it["en"] != title }
-    val originalLanguageAltTitle = altTitles.find { it.containsKey("en") && it["en"] == title }
-    return if (englishAltTitles.isNotEmpty()) {
-        englishAltTitles[0]["en"] ?: title
+    val languageISO = languageSetting.isoCode
+    val localizedAltTitles = altTitles.filter { it.containsKey(languageISO) && it[languageISO] != title }
+    val originalLanguageAltTitle = altTitles.find { it.containsKey(languageISO) && it[languageISO] == title }
+    return if (localizedAltTitles.isNotEmpty()) {
+        localizedAltTitles[0][languageISO] ?: title
     } else {
         originalLanguageAltTitle?.get(originalLanguageAltTitle["originalLanguage"]) ?: altTitles[0].values.first()
     }
 }
 
-private fun findDescription(description: Map<String, String>, altTitles: List<Map<String, String>>): String {
-    val englishDescription = description["en"]
+private fun findDescription(description: Map<String, String>, altTitles: List<Map<String, String>>, languageSetting: ComicLanguageSetting): String {
+    val languageISO = languageSetting.isoCode
+    val localizedDescription = description[languageISO]
     val originalLanguage = description["originalLanguage"]
     val originalLanguageDescription = originalLanguage?.let { description[it] }
-    return englishDescription ?: originalLanguageDescription ?: altTitles.firstOrNull()?.values?.firstOrNull() ?: "No description available"
+    return localizedDescription ?: originalLanguageDescription ?: altTitles.firstOrNull()?.values?.firstOrNull() ?: "No description available"
 }
 
-fun mangaAdapterListToComicList(mangaAdapterList: List<MangadexDataAdapter>): List<Comic> {
-    return mangaAdapterList.map { mangadexDataAdapterToManga(it) }
+fun mangaAdapterListToComicList(mangaAdapterList: List<MangadexDataAdapter>, languageSetting: ComicLanguageSetting): List<Comic> {
+    return mangaAdapterList.map { mangadexDataAdapterToManga(it, languageSetting) }
 }

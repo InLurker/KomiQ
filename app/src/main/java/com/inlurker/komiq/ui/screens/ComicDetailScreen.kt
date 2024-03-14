@@ -63,6 +63,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.datamodel.Chapter
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.AddToLibraryButton
@@ -400,7 +401,8 @@ fun ComicDetailScreenPreview() {
     //gorilla: a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
     //mato: e1e38166-20e4-4468-9370-187f985c550e
     //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579
-    ComicDetailScreen(viewModel = ComicDetailViewModel("d7037b2a-874a-4360-8a7b-07f2899152fd"))
+
+    ComicDetailScreen(viewModel = ComicDetailViewModel("d7037b2a-874a-4360-8a7b-07f2899152fd", ComicLanguageSetting.Korean))
 }
     /*
     ComicDetailScreen(

@@ -8,16 +8,22 @@ import androidx.lifecycle.viewModelScope
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.datamodel.Tag
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import kotlinx.coroutines.launch
 
 
 class ComicDetailViewModel(
-    comicId: String
+    comicId: String,
+    languageSetting: ComicLanguageSetting
 ) : ViewModel() {
 
 
-    var comic by mutableStateOf(Comic())
+    var comic by mutableStateOf(
+        Comic(
+            languageSetting = languageSetting
+        )
+    )
         private set
 
     var isComicInLibrary by mutableStateOf(false)
@@ -26,19 +32,18 @@ class ComicDetailViewModel(
     var genreList by mutableStateOf(emptyList<Tag>())
         private set
 
-
     var chapterList by mutableStateOf(emptyList<Chapter>())
         private set
 
     init {
         viewModelScope.launch {
-            ComicRepository.getComic(comicId)?.let {
+            ComicRepository.getComic(comicId, languageSetting)?.let {
                 comic = it
             }
 
             genreList = comic.tags
 
-            chapterList = ComicRepository.getComicChapterList(comicId)
+            chapterList = ComicRepository.getComicChapterList(comicId, languageSetting)
 
             ComicRepository.isComicInLibrary(comicId).collect { isInLibrary ->
                 isComicInLibrary = isInLibrary

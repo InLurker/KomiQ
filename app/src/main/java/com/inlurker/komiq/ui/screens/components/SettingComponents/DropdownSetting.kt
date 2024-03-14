@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.toSize
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
-import com.inlurker.komiq.ui.screens.helper.Enumerated.ComicLanguageSetting
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
 
