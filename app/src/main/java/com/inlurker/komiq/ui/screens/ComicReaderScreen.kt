@@ -384,7 +384,7 @@ fun ComicReaderScreen(
                                 onValueChange = { newValue ->
                                     currentPage = newValue.toInt()
                                 },
-                                valueRange = 0f..(totalPages - 1).toFloat(),
+                                valueRange = 0f..(if (totalPages > 0) totalPages - 1 else 0).toFloat(),
                                 steps = if (totalPages > 2) totalPages - 2 else 0,
                                 modifier = Modifier
                                     .weight(1f)
