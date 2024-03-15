@@ -75,18 +75,21 @@ enum class ThemeTag(val description: String, val hash: String) {
     }
 }
 
+enum class FormatTag(val description: String, val hash: String) {
+    ONESHOT("Oneshot", "0234a31e-a729-4e28-9d6a-3f87c4966b9e"),
+    AWARD_WINNING("Award Winning", "0a39b5a1-b235-4886-a747-1d05d216532d"),
+    OFFICIAL_COLORED("Official Colored", "320831a8-4026-470b-94f6-8353740e6f04"),
+    LONG_STRIP("Long Strip", "3e2b8dae-350e-4ab8-a8ce-016e844b9f0d"),
+    ANTHOLOGY("Anthology", "51d83883-4103-437c-b4b1-731cb73d786c"),
+    FAN_COLORED("Fan Colored", "7b2ce280-79ef-4c09-9b58-12b7c23a9b78"),
+    SELF_PUBLISHED("Self Published", "891cf039-b895-47f0-9229-bef4c96eccd4"),
+    FOUR_KOMA("Four Koma", "b11fda93-8f1d-4bef-b2ed-8803d3733170"),
+    DOUJINSHI("Doujinshi", "b13b2a48-c720-44a9-9c77-39c9979373fb"),
+    WEB_COMIC("Web Comic", "e197df38-d0e7-43b5-9b09-2842d0c326dd"),
+    ADAPTATION("Adaptation", "f4122d1c-3b44-44d0-9936-ff7502c39ad3"),
+    FULL_COLOR("Full Color", "f5ba408b-0e7a-484d-8d49-4e9125ac96de");
 
-object FormatTag {
-    const val ONESHOT = "0234a31e-a729-4e28-9d6a-3f87c4966b9e"
-    const val AWARD_WINNING = "0a39b5a1-b235-4886-a747-1d05d216532d"
-    const val OFFICIAL_COLORED = "320831a8-4026-470b-94f6-8353740e6f04"
-    const val LONG_STRIP = "3e2b8dae-350e-4ab8-a8ce-016e844b9f0d"
-    const val ANTHOLOGY = "51d83883-4103-437c-b4b1-731cb73d786c"
-    const val FAN_COLORED = "7b2ce280-79ef-4c09-9b58-12b7c23a9b78"
-    const val SELF_PUBLISHED = "891cf039-b895-47f0-9229-bef4c96eccd4"
-    const val FOUR_KOMA = "b11fda93-8f1d-4bef-b2ed-8803d3733170"
-    const val DOUJINSHI = "b13b2a48-c720-44a9-9c77-39c9979373fb"
-    const val WEB_COMIC = "e197df38-d0e7-43b5-9b09-2842d0c326dd"
-    const val ADAPTATION = "f4122d1c-3b44-44d0-9936-ff7502c39ad3"
-    const val FULL_COLOR = "f5ba408b-0e7a-484d-8d49-4e9125ac96de"
+    companion object {
+        fun asList(): List<FormatTag> = values().toList()
+    }
 }

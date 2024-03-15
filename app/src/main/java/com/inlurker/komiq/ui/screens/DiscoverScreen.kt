@@ -59,16 +59,6 @@ fun DiscoverScreen(
     navController: NavController = rememberNavController(),
     viewModel: DiscoverViewModel = viewModel()
 ) {
-    val sortingMethods = listOf(
-        MangaOrderOptions.FOLLOWED_COUNT to "Popularity",
-        MangaOrderOptions.RELEVANCE to "Relevance",
-        MangaOrderOptions.LATEST_UPLOADED_CHAPTER to "Latest",
-        MangaOrderOptions.UPDATED_AT to "Updated",
-        MangaOrderOptions.CREATED_AT to "Created",
-        MangaOrderOptions.TITLE to "Alphabetical",
-        MangaOrderOptions.YEAR to "Year"
-    )
-
     var searchQuery by remember { mutableStateOf("") }
     var searchActive by remember { mutableStateOf(false) }
     val searchHint = "Search comic"
@@ -191,9 +181,18 @@ fun DiscoverScreen(
                 ) {}
             }
             item(span = { GridItemSpan(3) }) {
+                val sortingMethods = listOf(
+                    MangaOrderOptions.FOLLOWED_COUNT to "Popularity",
+                    MangaOrderOptions.RELEVANCE to "Relevance",
+                    MangaOrderOptions.LATEST_UPLOADED_CHAPTER to "Latest",
+                    MangaOrderOptions.UPDATED_AT to "Updated",
+                    MangaOrderOptions.CREATED_AT to "Created",
+                    MangaOrderOptions.TITLE to "Alphabetical",
+                    MangaOrderOptions.YEAR to "Year"
+                )
                 SortingToolbar(
                     sortingMethods = sortingMethods.map { it.second },
-                    onSortingMethodSelected = { index, sortingMethod ->
+                    onSortingMethodSelected = { index, _ ->
                         viewModel.sortingMethod = sortingMethods[index].first
                         viewModel.updateSearchQuery()
                         viewModel.resetComicList()
