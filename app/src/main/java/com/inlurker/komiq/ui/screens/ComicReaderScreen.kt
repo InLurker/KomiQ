@@ -170,8 +170,11 @@ fun ComicReaderScreen(
             currentPage = page
         }
     }
-    LaunchedEffect(currentPage) {
+
+    var scrollToPage by remember { mutableStateOf(false) }
+    LaunchedEffect(scrollToPage) {
         pagerState.animateScrollToPage(page = currentPage)
+        scrollToPage = false
     }
 
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -383,6 +386,9 @@ fun ComicReaderScreen(
                                 value = currentPage.toFloat(),
                                 onValueChange = { newValue ->
                                     currentPage = newValue.toInt()
+                                },
+                                onValueChangeFinished = {
+                                    scrollToPage = true
                                 },
                                 valueRange = 0f..(if (totalPages > 0) totalPages - 1 else 0).toFloat(),
                                 steps = if (totalPages > 2) totalPages - 2 else 0,
