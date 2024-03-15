@@ -175,7 +175,7 @@ fun LibraryScreen(
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
-                        navController.navigate("detail/${comic.id}") {
+                        navController.navigate("detail/${comic.languageSetting.isoCode}_${comic.id}") {
                             popUpToTop(navController)
                         }
                     }

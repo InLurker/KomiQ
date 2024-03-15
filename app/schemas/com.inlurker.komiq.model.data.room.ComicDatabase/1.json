@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "559e5638aa798578d23de335634e8753",
+    "identityHash": "4f02c42d018b06a5275f3bc6733835c2",
     "entities": [
       {
         "tableName": "Comic",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `authors` TEXT NOT NULL, `tags` TEXT NOT NULL, `cover` TEXT NOT NULL, `isInLibrary` INTEGER NOT NULL, `title` TEXT NOT NULL, `altTitle` TEXT NOT NULL, `description` TEXT NOT NULL, `languageSetting` TEXT NOT NULL, `originalLanguage` TEXT NOT NULL, `publicationDemographic` TEXT, `status` TEXT NOT NULL, `year` INTEGER NOT NULL, `contentRating` TEXT NOT NULL, `addedAt` TEXT, `updatedAt` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `authors` TEXT NOT NULL, `tags` TEXT NOT NULL, `cover` TEXT NOT NULL, `isInLibrary` INTEGER NOT NULL, `title` TEXT NOT NULL, `altTitle` TEXT NOT NULL, `description` TEXT NOT NULL, `languageSetting` TEXT NOT NULL, `originalLanguage` TEXT NOT NULL, `publicationDemographic` TEXT, `status` TEXT NOT NULL, `year` INTEGER NOT NULL, `contentRating` TEXT NOT NULL, `addedAt` TEXT, `updatedAt` TEXT, PRIMARY KEY(`id`, `languageSetting`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -114,7 +114,8 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "id"
+            "id",
+            "languageSetting"
           ]
         },
         "indices": [],
@@ -124,7 +125,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '559e5638aa798578d23de335634e8753')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4f02c42d018b06a5275f3bc6733835c2')"
     ]
   }
 }

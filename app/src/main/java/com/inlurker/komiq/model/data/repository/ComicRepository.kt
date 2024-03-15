@@ -156,20 +156,20 @@ object ComicRepository {
         }
     }
 
-    suspend fun removeComicFromLibrary(comicId: String): Boolean {
+    suspend fun removeComicFromLibrary(comicId: String, languageSetting: ComicLanguageSetting): Boolean {
         return try {
-            comicDao.deleteComicById(comicId)
+            comicDao.deleteComicById(comicId, languageSetting)
             true
         } catch (e: Exception) {
             false
         }
     }
 
-    fun isComicInLibrary(comicId: String): Flow<Boolean> {
-        return comicDao.getComicById(comicId)
+    fun isComicInLibrary(comicId: String, languageSetting: ComicLanguageSetting): Flow<Boolean> {
+        return comicDao.getComicById(comicId, languageSetting)
             .catch { emit(null) } // Handle any errors and emit null
             .flowOn(Dispatchers.IO) // Switch to the IO dispatcher for database operations
-            .map { comic -> comic != null && comic.id == comicId }
+            .map { comic -> comic != null && comic.id == comicId && comic.languageSetting == languageSetting }
     }
 
 }

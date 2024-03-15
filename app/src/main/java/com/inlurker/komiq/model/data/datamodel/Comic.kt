@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import java.time.LocalDateTime
 
-@Entity
+@Entity(primaryKeys = ["id", "languageSetting"])
 data class Comic(
-    @PrimaryKey val id: String = "id",
+    val id: String = "id",
     val type: String = "type",
     val authors: List<String> = emptyList(),
     val tags: List<Tag> = emptyList(),

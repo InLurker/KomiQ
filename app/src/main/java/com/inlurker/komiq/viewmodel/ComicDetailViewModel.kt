@@ -45,7 +45,7 @@ class ComicDetailViewModel(
 
             chapterList = ComicRepository.getComicChapterList(comicId, languageSetting)
 
-            ComicRepository.isComicInLibrary(comicId).collect { isInLibrary ->
+            ComicRepository.isComicInLibrary(comicId, languageSetting).collect { isInLibrary ->
                 isComicInLibrary = isInLibrary
             }
         }
@@ -54,7 +54,7 @@ class ComicDetailViewModel(
     fun toggleComicInLibrary() {
         viewModelScope.launch {
             val success = if (isComicInLibrary) {
-                ComicRepository.removeComicFromLibrary(comic.id)
+                ComicRepository.removeComicFromLibrary(comic.id, comic.languageSetting)
             } else {
                 ComicRepository.addComicToLibrary(comic)
             }
