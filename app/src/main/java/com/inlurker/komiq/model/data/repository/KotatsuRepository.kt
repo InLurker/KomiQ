@@ -4,7 +4,6 @@ import androidx.annotation.AnyThread
 import com.inlurker.komiq.model.data.kotatsu.KotatsuMangaParser
 import com.inlurker.komiq.model.data.kotatsu.util.ContentCache
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
-import org.koitharu.kotatsu.parsers.MangaParser
 import org.koitharu.kotatsu.parsers.model.ContentRating
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaChapter

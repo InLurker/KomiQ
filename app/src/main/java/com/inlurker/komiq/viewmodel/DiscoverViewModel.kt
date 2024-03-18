@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaToComic
 import com.inlurker.komiq.model.data.mangadexapi.builders.ComicSearchQuery
 import com.inlurker.komiq.model.data.mangadexapi.constants.GenreTag
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
@@ -16,6 +17,8 @@ import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
+import org.koitharu.kotatsu.parsers.MangaParser
+import org.koitharu.kotatsu.parsers.model.MangaListFilter
 
 class DiscoverViewModel : ViewModel() {
     var comicList = mutableStateListOf<Comic>()
@@ -24,11 +27,12 @@ class DiscoverViewModel : ViewModel() {
     private var isPaginationExhausted = false
     private var isLoading = false
 
+    lateinit var kotatsuParser: MangaParser
+
     var searchQuery by mutableStateOf("")
     var sortingMethod by mutableStateOf(MangaOrderOptions.FOLLOWED_COUNT)
     var sortingOrder by mutableStateOf(SortingOrder.DESC)
     val comicAmount = 30
-    var offsetAmount by mutableStateOf(0)
     var comicLanguageSetting by mutableStateOf(ComicLanguageSetting.English)
     var genreFilter by mutableStateOf(emptyList<GenreTag>())
     var themeFilter by mutableStateOf(emptyList<ThemeTag>())
@@ -42,12 +46,9 @@ class DiscoverViewModel : ViewModel() {
         .sortingMethod(sortingMethod)
         .sortingOrder(sortingOrder)
         .comicAmount(comicAmount)
-        .offsetAmount(offsetAmount)
+        .offsetAmount(comicList.size)
         .includedTags(genreFilter.map { it.hash } + themeFilter.map { it.hash })
-        .comicAmount(30)
-        .offsetAmount((currentPage - 1) * 30)
         .build()
-
 
     suspend fun getComics() {
         if (isLoading || isPaginationExhausted) return
@@ -55,21 +56,31 @@ class DiscoverViewModel : ViewModel() {
         try {
             isLoading = true
             listState = ListState.LOADING
-
             val updatedComicSearchQuery =
-                comicSearchQuery.copy(offsetAmount = (currentPage - 1) * 30)
+                comicSearchQuery.copy(offsetAmount = comicList.size)
 
-            ComicRepository.getComicList(updatedComicSearchQuery, comicLanguageSetting)
-                .collect { comics ->
-                    if (comics.isNotEmpty()) {
-                        comicList.addAll(comics)
-                        listState = ListState.IDLE
-                        currentPage++
-                    } else {
-                        isPaginationExhausted = true
-                        listState = ListState.PAGINATION_EXHAUST
+            if (comicLanguageSetting == ComicLanguageSetting.Japanese) {
+                val retrievedComic =
+                    kotatsuParser.getList(
+                        offset = updatedComicSearchQuery.offsetAmount,
+                        filter = MangaListFilter.Search(updatedComicSearchQuery.searchQuery)
+                    ).map {
+                        kotatsuMangaToComic(it)
                     }
-                }
+                comicList.addAll(retrievedComic)
+            } else {
+                ComicRepository.getComicList(updatedComicSearchQuery, comicLanguageSetting)
+                    .collect { comics ->
+                        if (comics.isNotEmpty()) {
+                            comicList.addAll(comics)
+                            listState = ListState.IDLE
+                            currentPage++
+                        } else {
+                            isPaginationExhausted = true
+                            listState = ListState.PAGINATION_EXHAUST
+                        }
+                    }
+            }
         } catch (error: Exception) {
             listState = ListState.ERROR
             // Handle error
@@ -101,9 +112,8 @@ class DiscoverViewModel : ViewModel() {
             .setSortingMethod(sortingMethod)
             .setSortingOrder(sortingOrder)
             .setComicAmount(comicAmount)
-            .setOffsetAmount(offsetAmount)
             .setIncludedTags(genreFilter.map { it.hash })
-            .setComicAmount(30)
-            .setOffsetAmount((currentPage - 1) * 30)
+            .setOffsetAmount(comicList.size)
     }
 }
+

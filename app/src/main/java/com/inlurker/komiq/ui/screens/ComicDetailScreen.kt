@@ -99,7 +99,7 @@ fun ComicDetailScreen(
     var topAppBarIconButtonColor by remember { mutableStateOf(onPrimaryMaterialContainerColor) }
 
 
-    val coverArtImageRequest = loadImageFromUrl(context, viewModel.comic.id, viewModel.comic.cover)
+    val coverArtImageRequest = loadImageFromUrl(context, viewModel.comic.cover)
 
     val isDarkTheme = isSystemInDarkTheme()
 

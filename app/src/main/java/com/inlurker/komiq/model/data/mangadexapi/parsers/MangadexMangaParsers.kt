@@ -5,6 +5,7 @@ import com.inlurker.komiq.model.data.datamodel.Comic
 import com.inlurker.komiq.model.data.datamodel.Tag
 import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexDataAdapter
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.ui.screens.helper.ImageHelper.getComicCoverUrl
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -48,7 +49,6 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter, languageSetting: Comic
 
     return Comic(
         id = data.id,
-        type = data.type,
         title = title,
         altTitle = altTitle,
         description = description,
@@ -62,7 +62,7 @@ fun mangadexDataAdapterToManga(data: MangadexDataAdapter, languageSetting: Comic
         updatedAt = LocalDateTime.parse(attributes.updatedAt ?: "", DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         authors = authorList,
         tags = tagList,
-        cover = coverFileName,
+        cover = getComicCoverUrl(data.id, coverFileName),
         isInLibrary = false
     )
 }

@@ -35,11 +35,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.kotatsu.util.InMemoryCookieJar
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
 import com.inlurker.komiq.ui.navigation.popUpToTop
@@ -51,6 +53,9 @@ import com.inlurker.komiq.ui.screens.components.SortingToolbar
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import org.koitharu.kotatsu.parsers.KotatsuMangaLoaderContext
+import org.koitharu.kotatsu.parsers.model.MangaSource
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +72,14 @@ fun DiscoverScreen(
     var isDescending  by remember { mutableStateOf(true) }
 
     val lazyGridScrollState = rememberLazyGridState()
+
+    val kotatsuLoaderContext = KotatsuMangaLoaderContext(
+        OkHttpClient(),
+        InMemoryCookieJar(),
+        LocalContext.current
+    )
+
+    viewModel.kotatsuParser = kotatsuLoaderContext.newParserInstance(MangaSource.RAWKUMA)
 
     val refreshSearchAction = {
         viewModel.updateSearchQuery()

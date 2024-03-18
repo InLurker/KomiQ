@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 @Entity(primaryKeys = ["id", "languageSetting"])
 data class Comic(
     val id: String = "id",
-    val type: String = "type",
     val authors: List<String> = emptyList(),
     val tags: List<Tag> = emptyList(),
     val cover: String = "cover",
