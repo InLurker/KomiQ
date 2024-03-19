@@ -17,7 +17,8 @@ import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
-import org.koitharu.kotatsu.parsers.MangaParser
+import org.koitharu.kotatsu.parsers.InternalParsersApi
+import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaListFilter
 
 class DiscoverViewModel : ViewModel() {
@@ -27,7 +28,8 @@ class DiscoverViewModel : ViewModel() {
     private var isPaginationExhausted = false
     private var isLoading = false
 
-    lateinit var kotatsuParser: MangaParser
+    @OptIn(InternalParsersApi::class)
+    lateinit var kotatsuParser: PagedMangaParser
 
     var searchQuery by mutableStateOf("")
     var sortingMethod by mutableStateOf(MangaOrderOptions.FOLLOWED_COUNT)
@@ -50,6 +52,7 @@ class DiscoverViewModel : ViewModel() {
         .includedTags(genreFilter.map { it.hash } + themeFilter.map { it.hash })
         .build()
 
+    @OptIn(InternalParsersApi::class)
     suspend fun getComics() {
         if (isLoading || isPaginationExhausted) return
 
@@ -60,13 +63,15 @@ class DiscoverViewModel : ViewModel() {
                 comicSearchQuery.copy(offsetAmount = comicList.size)
 
             if (comicLanguageSetting == ComicLanguageSetting.Japanese) {
+                println(comicList.size)
                 val retrievedComic =
-                    kotatsuParser.getList(
-                        offset = updatedComicSearchQuery.offsetAmount,
+                    kotatsuParser.getListPage(
+                        page = currentPage,
                         filter = MangaListFilter.Search(updatedComicSearchQuery.searchQuery)
                     ).map {
                         kotatsuMangaToComic(it)
                     }
+                currentPage++
                 comicList.addAll(retrievedComic)
             } else {
                 ComicRepository.getComicList(updatedComicSearchQuery, comicLanguageSetting)

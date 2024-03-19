@@ -54,11 +54,13 @@ import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import org.koitharu.kotatsu.parsers.InternalParsersApi
 import org.koitharu.kotatsu.parsers.KotatsuMangaLoaderContext
+import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaSource
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalParsersApi::class)
 @Composable
 fun DiscoverScreen(
     navController: NavController = rememberNavController(),
@@ -79,7 +81,7 @@ fun DiscoverScreen(
         LocalContext.current
     )
 
-    viewModel.kotatsuParser = kotatsuLoaderContext.newParserInstance(MangaSource.RAWKUMA)
+    viewModel.kotatsuParser = kotatsuLoaderContext.newParserInstance(MangaSource.RAWKUMA) as PagedMangaParser
 
     val refreshSearchAction = {
         viewModel.updateSearchQuery()
