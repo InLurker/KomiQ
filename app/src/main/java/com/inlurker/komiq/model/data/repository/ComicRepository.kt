@@ -4,6 +4,7 @@ import android.content.Context
 import com.inlurker.komiq.model.data.dao.ComicDao
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.kotatsu.util.InMemoryCookieJar
 import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPages
 import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPagesResponse
 import com.inlurker.komiq.model.data.mangadexapi.adapters.MangadexChapterListResponse
@@ -26,11 +27,19 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.koitharu.kotatsu.parsers.KotatsuMangaLoaderContext
 
 
 object ComicRepository {
     private lateinit var comicDao: ComicDao
+    lateinit var currentComic: Comic
+    lateinit var currentChapter: Chapter
+
+    val okHttpClient = OkHttpClient()
+    val memoryCookieJar = InMemoryCookieJar()
+
     fun initialize(context: Context) {
         val database = ComicDatabase.getDatabase(context)
         comicDao = database.comicDao()
@@ -172,4 +181,11 @@ object ComicRepository {
             .map { comic -> comic != null && comic.id == comicId && comic.languageSetting == languageSetting }
     }
 
+    fun getKotatsuLoaderContext(context: Context): KotatsuMangaLoaderContext {
+        return KotatsuMangaLoaderContext(
+            okHttpClient,
+            memoryCookieJar,
+            context
+        )
+    }
 }

@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
 import com.inlurker.komiq.ui.screens.components.LargeTopAppBarComponent
@@ -175,7 +177,8 @@ fun LibraryScreen(
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
-                        navController.navigate("detail/${comic.languageSetting.isoCode}_${comic.id}") {
+                        ComicRepository.currentComic = comic
+                        navController.navigate(ComicNavigationScreenModel.Detail.route) {
                             popUpToTop(navController)
                         }
                     }

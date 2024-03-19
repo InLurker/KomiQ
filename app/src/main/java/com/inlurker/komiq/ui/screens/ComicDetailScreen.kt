@@ -58,13 +58,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberAsyncImagePainter
 import com.inlurker.komiq.model.data.datamodel.Chapter
-import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.datamodel.Tag
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.AddToLibraryButton
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.CollapsibleDescriptionComponent
@@ -75,15 +78,21 @@ import com.inlurker.komiq.ui.screens.helper.Formatters.pluralize
 import com.inlurker.komiq.ui.screens.helper.Formatters.removeTrailingZero
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.loadImageFromUrl
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
+import org.koitharu.kotatsu.parsers.InternalParsersApi
+import java.time.LocalDateTime
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalParsersApi::class)
 @Composable
 fun ComicDetailScreen(
     navController: NavController = rememberNavController(),
-    viewModel: ComicDetailViewModel
+    viewModel: ComicDetailViewModel = viewModel()
 ) {
     val context = LocalContext.current
+
+    LaunchedEffect(true) {
+        viewModel.getComicDetail(context)
+    }
 
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
@@ -208,14 +217,20 @@ fun ComicDetailScreen(
                                 .padding(horizontal = 10.dp)
                                 .padding(top = 8.dp)
                         ) {
+                            val statusText = viewModel.comic.year.let {
+                                if (it != 0) {
+                                    it.toString() + ", "
+                                } else {
+                                    ""
+                                }
+                            } + viewModel.comic.status.replaceFirstChar {
+                                if (it.isLowerCase()) it.titlecase(
+                                    Locale.ROOT
+                                ) else it.toString()
+                            }
+
                             Text(
-                                text = "${viewModel.comic.year}, ${
-                                    viewModel.comic.status.replaceFirstChar {
-                                        if (it.isLowerCase()) it.titlecase(
-                                            Locale.ROOT
-                                        ) else it.toString()
-                                    }
-                                }",
+                                text = statusText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Normal,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -307,7 +322,8 @@ fun ComicDetailScreen(
             item {
                 Button(
                     onClick = {
-                        navController.navigate("reader/${chapterList.last().id}") {
+                        ComicRepository.currentChapter = chapterList.last()
+                        navController.navigate(ComicNavigationScreenModel.Reader.route) {
                             popUpToTop(navController)
                         }
                     },
@@ -361,7 +377,7 @@ fun ComicDetailScreen(
                     thickness = 1.dp
                 )
                 if (chapterList.isNotEmpty()) {
-                    chapterList.forEach { chapter ->
+                    chapterList.sortedByDescending { it.chapter }.forEach { chapter ->
                         ChapterListElement(
                             volumeNumber = chapter.volume ?: 0f,
                             chapterNumber = chapter.chapter,
@@ -370,7 +386,8 @@ fun ComicDetailScreen(
                             scanlationGroup = chapter.scanlationGroup,
                             backgroundColor = secondaryVibrantColor,
                             onClick = {
-                                navController.navigate("reader/${chapter.id}") {
+                                ComicRepository.currentChapter = chapter
+                                navController.navigate(ComicNavigationScreenModel.Reader.route) {
                                     popUpToTop(navController)
                                 }
                             }
@@ -401,48 +418,47 @@ fun ComicDetailScreenPreview() {
     //gorilla: a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
     //mato: e1e38166-20e4-4468-9370-187f985c550e
     //mount celeb: 36d27f1d-122a-4c7e-9001-a0d62c8fb579
+    val comic = Comic(
+        id = "03426dd2-63c5-493e-853e-485d7c7dc9c0",
+        title = "Kono Subarashii Sekai ni Nichijou wo !",
+        altTitle = "Everyday Life in This Wonderful World !",
+        description = """
+                    Spinoff of the KonoSuba series, featuring the daily life of Kazuma and Co .
+                """.trimIndent(),
+        originalLanguage = "ja",
+        publicationDemographic = "shounen",
+        status = "completed",
+        year = 2016,
+        contentRating = "safe",
+        addedAt = LocalDateTime.now(),
+        updatedAt = LocalDateTime.now(),
+        authors = listOf("Akatsuki Natsume", "Somemiya Suzume"),
+        tags = listOf(
+            Tag(name = "Reincarnation", group = "theme"),
+            Tag(name = "Monsters", group = "theme"),
+            Tag(name = "Action", group = "genre"),
+            Tag(name = "Demons", group = "theme"),
+            Tag(name = "Animals", group = "theme"),
+            Tag(name = "Romance", group = "genre"),
+            Tag(name = "Comedy", group = "genre"),
+            Tag(name = "Adventure", group = "genre"),
+            Tag(name = "Magic", group = "theme"),
+            Tag(name = "Harem", group = "theme"),
+            Tag(name = "Isekai", group = "genre"),
+            Tag(name = "Fantasy", group = "genre"),
+            Tag(name = "Monster Girls", group = "theme"),
+            Tag(name = "Slice of Life", group = "genre"),
+            Tag(name = "Supernatural", group = "theme")
+        ),
+        cover = "c9ff96db-c443-4d93-8c14-2c6540b9f249.jpg",
+        isInLibrary = false
+    )
 
-    ComicDetailScreen(viewModel = ComicDetailViewModel("d7037b2a-874a-4360-8a7b-07f2899152fd", ComicLanguageSetting.Korean))
+    ComicRepository.currentComic = comic
+    ComicDetailScreen()
 }
     /*
     ComicDetailScreen(
-        comic = Comic(
-            id = "03426dd2-63c5-493e-853e-485d7c7dc9c0",
-            type = "manga",
-            attributes = Attributes(
-                title = "Kono Subarashii Sekai ni Nichijou wo !",
-                altTitle = "Everyday Life in This Wonderful World !",
-                description = """
-                    Spinoff of the KonoSuba series, featuring the daily life of Kazuma and Co .
-                """.trimIndent(),
-                originalLanguage = "ja",
-                publicationDemographic = "shounen",
-                status = "completed",
-                year = 2016,
-                contentRating = "safe",
-                addedAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(), lastReadChaper = 0
-            ),
-            authors = listOf("Akatsuki Natsume", "Somemiya Suzume"),
-            tags = listOf(
-                Tag(name = "Reincarnation", group = "theme"),
-                Tag(name = "Monsters", group = "theme"),
-                Tag(name = "Action", group = "genre"),
-                Tag(name = "Demons", group = "theme"),
-                Tag(name = "Animals", group = "theme"),
-                Tag(name = "Romance", group = "genre"),
-                Tag(name = "Comedy", group = "genre"),
-                Tag(name = "Adventure", group = "genre"),
-                Tag(name = "Magic", group = "theme"),
-                Tag(name = "Harem", group = "theme"),
-                Tag(name = "Isekai", group = "genre"),
-                Tag(name = "Fantasy", group = "genre"),
-                Tag(name = "Monster Girls", group = "theme"),
-                Tag(name = "Slice of Life", group = "genre"),
-                Tag(name = "Supernatural", group = "theme")
-            ),
-            cover = "c9ff96db-c443-4d93-8c14-2c6540b9f249.jpg",
-            isInLibrary = false
-        )
+
     )
      */

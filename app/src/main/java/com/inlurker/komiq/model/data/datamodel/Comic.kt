@@ -22,7 +22,9 @@ data class Comic(
     val year: Int = 0,
     val contentRating: String = "rating",
     val addedAt: LocalDateTime? = null,
-    val updatedAt: LocalDateTime? = null
+    val updatedAt: LocalDateTime? = null,
+    val url: String? = null,
+    val publicUrl: String? = null
 )
 
 @Entity

@@ -45,6 +45,8 @@ import com.inlurker.komiq.model.data.kotatsu.KotatsuPagedMangaParser
 import com.inlurker.komiq.model.data.kotatsu.util.InMemoryCookieJar
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.popUpToTop
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ComicCollectionPlaceholder
 import com.inlurker.komiq.ui.screens.components.ComicCollectionComponent
@@ -230,7 +232,8 @@ fun DiscoverScreen(
                 ComicCollectionComponent(
                     comic = comic,
                     onClick = {
-                        navController.navigate("detail/${comic.languageSetting.isoCode+ "_" + comic.id}") {
+                        ComicRepository.currentComic = comic
+                        navController.navigate(ComicNavigationScreenModel.Detail.route) {
                             popUpToTop(navController)
                         }
                     }

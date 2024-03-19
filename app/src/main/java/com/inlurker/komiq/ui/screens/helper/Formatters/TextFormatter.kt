@@ -8,10 +8,13 @@ fun formatChapterVolume(volumeNumber: Float, chapterNumber: Float, chapterName: 
         if (volumeNumber != 0f) {
             append("Vol. ${removeTrailingZero(volumeNumber)} ")
         }
-        append("Chapter ${removeTrailingZero(chapterNumber)}")
-        if(chapterName != null) {
-            append(" - ")
-            append(chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
+        val chapterText = "Chapter ${removeTrailingZero(chapterNumber)}"
+        append(chapterText)
+        chapterName?.let { name ->
+            if (name.isNotEmpty() && name != chapterText) {
+                append(" - ")
+                append(chapterName.takeIf { it.isNotEmpty() } ?: "Unknown")
+            }
         }
     }.toString()
 }

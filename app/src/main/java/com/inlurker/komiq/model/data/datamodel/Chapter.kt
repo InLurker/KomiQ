@@ -11,5 +11,6 @@ data class Chapter(
     val title: String,
     val publishAt: LocalDateTime,
     val pages: Int,
-    val scanlationGroup: String
+    val scanlationGroup: String,
+    val url: String?
 )

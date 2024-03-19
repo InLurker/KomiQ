@@ -56,8 +56,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.screens.components.PageReaders.HorizontalPageReader
 import com.inlurker.komiq.ui.screens.components.PageReaders.VerticalPageReader
 import com.inlurker.komiq.ui.screens.components.SegmentedButton
@@ -75,13 +77,16 @@ import com.inlurker.komiq.viewmodel.ComicReaderViewModel
 @Composable
 fun ComicReaderScreen(
     navController: NavController = rememberNavController(),
-    viewModel: ComicReaderViewModel
+    viewModel: ComicReaderViewModel = viewModel()
 ) {
     val context = LocalContext.current
 
-    val chapterPages = viewModel.chapterPages
+    LaunchedEffect(true) {
+        viewModel.getPages(context)
+    }
+
     var currentPage by remember { mutableIntStateOf(1) } // Start from page 1
-    val totalPages = chapterPages?.data?.size ?: 1
+    val totalPages = viewModel.pagesUrl.size
     val pagerState = rememberPagerState { totalPages } // Adjust initial page index
 
     var selectedReadingDirection by remember { mutableStateOf(ReadingDirection.RightToLeft) }
@@ -289,7 +294,7 @@ fun ComicReaderScreen(
                             ReadingDirection.LeftToRight, ReadingDirection.RightToLeft ->
                                 HorizontalPageReader(
                                     pagerState = pagerState,
-                                    chapterPages = chapterPages,
+                                    pagesUrl = viewModel.pagesUrl,
                                     colorFilter = colorFilter,
                                     readingDirection = selectedReadingDirection,
                                     context = context
@@ -298,7 +303,7 @@ fun ComicReaderScreen(
                             ReadingDirection.TopToBottom, ReadingDirection.BottomToTop ->
                                 VerticalPageReader(
                                     pagerState = pagerState,
-                                    chapterPages = chapterPages,
+                                    pagesUrl = viewModel.pagesUrl,
                                     colorFilter = colorFilter,
                                     readingDirection = selectedReadingDirection,
                                     context = context
@@ -416,5 +421,8 @@ fun ComicReaderScreen(
 @Preview
 @Composable
 fun ComicReaderScreenPreview() {
-    ComicReaderScreen(viewModel = ComicReaderViewModel("a1bd9359-c160-4fb5-acfe-3f0423441841"))
+    LaunchedEffect(true) {
+        ComicRepository.currentChapter = ComicRepository.getChapter("a1bd9359-c160-4fb5-acfe-3f0423441841")!!
+    }
+    ComicReaderScreen()
 }

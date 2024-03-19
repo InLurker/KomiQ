@@ -1,29 +1,42 @@
 package com.inlurker.komiq.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.inlurker.komiq.model.data.datamodel.Chapter
-import com.inlurker.komiq.model.data.mangadexapi.adapters.ChapterPages
+import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapter
+import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import kotlinx.coroutines.launch
+import org.koitharu.kotatsu.parsers.model.MangaSource
 
-class ComicReaderViewModel(
-    private val chapterId: String
-) : ViewModel() {
+class ComicReaderViewModel: ViewModel() {
 
-    var chapter by mutableStateOf<Chapter?>(null)
+    var chapter by mutableStateOf(ComicRepository.currentChapter)
 
-    var chapterPages by mutableStateOf<ChapterPages?>(null)
+    var pagesUrl by mutableStateOf(emptyList<String>())
         private set
 
-    init {
+    suspend fun getPages(context: Context) {
         viewModelScope.launch {
-            chapter = ComicRepository.getChapter(chapterId)
-            chapterPages = ComicRepository.getChapterPages(chapterId)
+            pagesUrl = if (ComicRepository.currentComic.languageSetting == ComicLanguageSetting.Japanese) {
+                val mangaLoaderContext = ComicRepository.getKotatsuLoaderContext(context).newParserInstance(MangaSource.RAWKUMA)
+                val mangaPages = mangaLoaderContext.getPages(
+                    chapterToKotatsuMangaChapter(chapter)
+                )
+
+                kotatsuMangaPageToPagesUrl(mangaPages)
+            } else {
+                val chapterPages = ComicRepository.getChapterPages(chapter.id)!!
+
+                chapterPages.data.map { filename ->
+                    getChapterPageImageUrl(chapterPages.hash, filename)
+                }
+            }
         }
     }
-
 }

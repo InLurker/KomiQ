@@ -63,7 +63,6 @@ class DiscoverViewModel : ViewModel() {
                 comicSearchQuery.copy(offsetAmount = comicList.size)
 
             if (comicLanguageSetting == ComicLanguageSetting.Japanese) {
-                println(comicList.size)
                 val retrievedComic =
                     kotatsuParser.getListPage(
                         page = currentPage,

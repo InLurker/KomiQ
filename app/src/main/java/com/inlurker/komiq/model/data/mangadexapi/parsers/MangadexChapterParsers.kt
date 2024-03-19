@@ -23,7 +23,8 @@ fun chapterAdapterToChapter(mangadexChapter: MangadexChapterAdapter): Chapter {
         title = chapterAttributes.title ?: "No title",
         publishAt = LocalDateTime.parse(chapterAttributes.publishAt, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         pages = chapterAttributes.pages,
-        scanlationGroup = scanlationGroup
+        scanlationGroup = scanlationGroup,
+        url = null
     )
 }
 
