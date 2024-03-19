@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -141,6 +142,9 @@ fun ComicDetailScreen(
 
 
     var chapterList by remember { mutableStateOf<List<Chapter>>(emptyList()) }
+    val sortedChapterList by remember {
+         derivedStateOf { chapterList.sortedByDescending { it.chapter } }
+    }
     var totalChapters by remember { mutableStateOf(0) }
     LaunchedEffect(viewModel.chapterList) {
         chapterList = viewModel.chapterList
@@ -334,7 +338,7 @@ fun ComicDetailScreen(
                         .height(35.dp)
                 ) {
                     Text(
-                        text = "Start Reading Chapter ${removeTrailingZero(chapterList.last().chapter)}",
+                        text = "Start Reading Chapter ${removeTrailingZero(sortedChapterList.last().chapter)}",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White
                     )
@@ -376,8 +380,8 @@ fun ComicDetailScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     thickness = 1.dp
                 )
-                if (chapterList.isNotEmpty()) {
-                    chapterList.sortedByDescending { it.chapter }.forEach { chapter ->
+                if (sortedChapterList.isNotEmpty()) {
+                    sortedChapterList.forEach { chapter ->
                         ChapterListElement(
                             volumeNumber = chapter.volume ?: 0f,
                             chapterNumber = chapter.chapter,
