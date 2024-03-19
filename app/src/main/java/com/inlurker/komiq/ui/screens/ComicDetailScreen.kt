@@ -79,11 +79,10 @@ import com.inlurker.komiq.ui.screens.helper.Formatters.pluralize
 import com.inlurker.komiq.ui.screens.helper.Formatters.removeTrailingZero
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.loadImageFromUrl
 import com.inlurker.komiq.viewmodel.ComicDetailViewModel
-import org.koitharu.kotatsu.parsers.InternalParsersApi
 import java.time.LocalDateTime
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, InternalParsersApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComicDetailScreen(
     navController: NavController = rememberNavController(),

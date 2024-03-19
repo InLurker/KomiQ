@@ -41,8 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.inlurker.komiq.model.data.kotatsu.KotatsuPagedMangaParser
-import com.inlurker.komiq.model.data.kotatsu.util.InMemoryCookieJar
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
 import com.inlurker.komiq.model.data.repository.ComicRepository
@@ -56,9 +54,8 @@ import com.inlurker.komiq.ui.screens.components.SortingToolbar
 import com.inlurker.komiq.viewmodel.DiscoverViewModel
 import com.inlurker.komiq.viewmodel.paging.ListState
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 import org.koitharu.kotatsu.parsers.InternalParsersApi
-import org.koitharu.kotatsu.parsers.KotatsuMangaLoaderContext
+import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaSource
 
 
@@ -77,13 +74,8 @@ fun DiscoverScreen(
 
     val lazyGridScrollState = rememberLazyGridState()
 
-    val kotatsuLoaderContext = KotatsuMangaLoaderContext(
-        OkHttpClient(),
-        InMemoryCookieJar(),
-        LocalContext.current
-    )
-
-    viewModel.kotatsuParser = KotatsuPagedMangaParser(MangaSource.RAWKUMA, kotatsuLoaderContext)
+    viewModel.kotatsuParser = ComicRepository.getKotatsuLoaderContext(LocalContext.current)
+        .newParserInstance(MangaSource.RAWKUMA) as PagedMangaParser
 
     val refreshSearchAction = {
         viewModel.updateSearchQuery()
