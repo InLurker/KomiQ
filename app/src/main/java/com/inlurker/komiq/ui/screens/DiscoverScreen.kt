@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.kotatsu.KotatsuPagedMangaParser
 import com.inlurker.komiq.model.data.kotatsu.util.InMemoryCookieJar
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
@@ -56,7 +57,6 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.koitharu.kotatsu.parsers.InternalParsersApi
 import org.koitharu.kotatsu.parsers.KotatsuMangaLoaderContext
-import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaSource
 
 
@@ -81,7 +81,7 @@ fun DiscoverScreen(
         LocalContext.current
     )
 
-    viewModel.kotatsuParser = kotatsuLoaderContext.newParserInstance(MangaSource.RAWKUMA) as PagedMangaParser
+    viewModel.kotatsuParser = KotatsuPagedMangaParser(MangaSource.RAWKUMA, kotatsuLoaderContext)
 
     val refreshSearchAction = {
         viewModel.updateSearchQuery()
