@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.parsers.InternalParsersApi
 import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaListFilter
+import org.koitharu.kotatsu.parsers.model.MangaTag
+import org.koitharu.kotatsu.parsers.model.SortOrder
+import org.koitharu.kotatsu.parsers.model.ContentRating as KotatsuContentRating
 
 class DiscoverViewModel : ViewModel() {
     var comicList = mutableStateListOf<Comic>()
@@ -27,9 +30,6 @@ class DiscoverViewModel : ViewModel() {
     private var currentPage = 1
     private var isPaginationExhausted = false
     private var isLoading = false
-
-    @OptIn(InternalParsersApi::class)
-    lateinit var kotatsuParser: PagedMangaParser
 
     var searchQuery by mutableStateOf("")
     var sortingMethod by mutableStateOf(MangaOrderOptions.FOLLOWED_COUNT)
@@ -52,6 +52,20 @@ class DiscoverViewModel : ViewModel() {
         .includedTags(genreFilter.map { it.hash } + themeFilter.map { it.hash })
         .build()
 
+
+    @OptIn(InternalParsersApi::class)
+    lateinit var kotatsuParser: PagedMangaParser
+
+    var kotatsuSortingMethod by mutableStateOf(SortOrder.POPULARITY)
+    var kotatsuTagFilter by mutableStateOf(emptyList<MangaTag>())
+    var kotatsuContentRatingFilter by mutableStateOf(
+        setOf(
+            KotatsuContentRating.SAFE,
+            KotatsuContentRating.SUGGESTIVE
+        )
+    )
+
+
     @OptIn(InternalParsersApi::class)
     suspend fun getComics() {
         if (isLoading || isPaginationExhausted) return
@@ -64,12 +78,28 @@ class DiscoverViewModel : ViewModel() {
 
             if (comicLanguageSetting == ComicLanguageSetting.Japanese) {
                 val retrievedComic =
-                    kotatsuParser.getListPage(
-                        page = currentPage,
-                        filter = MangaListFilter.Search(updatedComicSearchQuery.searchQuery)
-                    ).map {
-                        kotatsuMangaToComic(it)
-                    }
+                        if (searchQuery.isEmpty()) {
+                            kotatsuParser.getListPage(
+                                page = currentPage,
+                                filter = MangaListFilter.Advanced(
+                                    sortOrder = kotatsuSortingMethod,
+                                    tags = kotatsuTagFilter.toSet(),
+                                    tagsExclude = emptySet(),
+                                    states = emptySet(),
+                                    locale = null,
+                                    contentRating = kotatsuContentRatingFilter
+                                )
+                            ).map {
+                                kotatsuMangaToComic(it)
+                            }
+                        } else {
+                            kotatsuParser.getListPage(
+                                page = currentPage,
+                                filter = MangaListFilter.Search(searchQuery)
+                            ).map {
+                                kotatsuMangaToComic(it)
+                            }
+                        }
                 currentPage++
                 comicList.addAll(retrievedComic)
             } else {
@@ -120,4 +150,3 @@ class DiscoverViewModel : ViewModel() {
             .setOffsetAmount(comicList.size)
     }
 }
-

@@ -41,8 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.kotatsu.KotatsuMangaParser
 import com.inlurker.komiq.model.data.mangadexapi.constants.MangaOrderOptions
 import com.inlurker.komiq.model.data.mangadexapi.constants.SortingOrder
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.navigation.navigationscreenmodel.ComicNavigationScreenModel
 import com.inlurker.komiq.ui.navigation.popUpToTop
@@ -57,6 +59,8 @@ import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.parsers.InternalParsersApi
 import org.koitharu.kotatsu.parsers.PagedMangaParser
 import org.koitharu.kotatsu.parsers.model.MangaSource
+import org.koitharu.kotatsu.parsers.model.MangaTag
+import org.koitharu.kotatsu.parsers.model.SortOrder
 
 
 @OptIn(ExperimentalMaterial3Api::class, InternalParsersApi::class)
@@ -74,15 +78,18 @@ fun DiscoverScreen(
 
     val lazyGridScrollState = rememberLazyGridState()
 
-    viewModel.kotatsuParser = ComicRepository.getKotatsuLoaderContext(LocalContext.current)
-        .newParserInstance(MangaSource.RAWKUMA) as PagedMangaParser
+    viewModel.kotatsuParser =
+        KotatsuMangaParser(
+            source = MangaSource.RAWKUMA,
+            loaderContext = ComicRepository.getKotatsuLoaderContext(LocalContext.current)
+        ) as PagedMangaParser
 
     val refreshSearchAction = {
         viewModel.updateSearchQuery()
         viewModel.resetComicList()
     }
 
-    val onSearchAction= {
+    val onSearchAction = {
         searchActive = true
         viewModel.searchQuery = searchQuery
         refreshSearchAction()
@@ -93,6 +100,11 @@ fun DiscoverScreen(
         searchQuery = ""
         viewModel.searchQuery = ""
         refreshSearchAction()
+    }
+
+    var kotatsuFilterList by remember { mutableStateOf(emptyList<MangaTag>()) }
+    LaunchedEffect(true) {
+        kotatsuFilterList = viewModel.kotatsuParser.getAvailableTags().toList()
     }
 
 
@@ -190,7 +202,7 @@ fun DiscoverScreen(
                 ) {}
             }
             item(span = { GridItemSpan(3) }) {
-                val sortingMethods = listOf(
+                val comicSortingMethods = listOf(
                     MangaOrderOptions.FOLLOWED_COUNT to "Popularity",
                     MangaOrderOptions.RELEVANCE to "Relevance",
                     MangaOrderOptions.LATEST_UPLOADED_CHAPTER to "Latest",
@@ -199,10 +211,30 @@ fun DiscoverScreen(
                     MangaOrderOptions.TITLE to "Alphabetical",
                     MangaOrderOptions.YEAR to "Year"
                 )
+
+                val kotatsuSortingMethods = listOf(
+                    SortOrder.POPULARITY to "Popularity",
+                    SortOrder.UPDATED to "Updated",
+                    SortOrder.NEWEST to "Newest",
+                    SortOrder.ALPHABETICAL to "Title",
+                    SortOrder.RATING to "Rating"
+                )
+
+                val sortingMethods: List<Pair<Any, String>> = if (viewModel.comicLanguageSetting == ComicLanguageSetting.Japanese) {
+                    comicSortingMethods
+                } else {
+                    kotatsuSortingMethods
+                }
+
                 SortingToolbar(
                     sortingMethods = sortingMethods.map { it.second },
                     onSortingMethodSelected = { index, _ ->
-                        viewModel.sortingMethod = sortingMethods[index].first
+                        if (viewModel.comicLanguageSetting == ComicLanguageSetting.Japanese) {
+                            viewModel.kotatsuSortingMethod = kotatsuSortingMethods[index].first
+                        } else {
+                            viewModel.sortingMethod =
+                                sortingMethods[index].first as MangaOrderOptions
+                        }
                         viewModel.updateSearchQuery()
                         viewModel.resetComicList()
                     },
@@ -270,24 +302,30 @@ fun DiscoverScreen(
                     currentComicLanguageSetting = viewModel.comicLanguageSetting,
                     currentGenreFilter = viewModel.genreFilter,
                     currentThemeFilter = viewModel.themeFilter,
-                    onApplySettings = { selectedLanguage, selectedGenre, selectedTheme ->
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showBottomSheet = false
-                            }
-                        }
-                        if (viewModel.comicLanguageSetting != selectedLanguage ||
-                            viewModel.genreFilter != selectedGenre ||
-                            viewModel.themeFilter != selectedTheme
-                        ) {
-                            viewModel.comicLanguageSetting = selectedLanguage
-                            viewModel.genreFilter = selectedGenre
-                            viewModel.themeFilter = selectedTheme
-
-                            refreshSearchAction()
+                    currentKotatsuTagFilter = viewModel.kotatsuTagFilter.toList(),
+                    kotatsuTagList = kotatsuFilterList
+                ) { selectedLanguage, selectedGenre, selectedTheme, selectedKotatsuTags ->
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showBottomSheet = false
                         }
                     }
-                )
+                    if (viewModel.comicLanguageSetting != selectedLanguage ||
+                        viewModel.genreFilter != selectedGenre ||
+                        viewModel.themeFilter != selectedTheme ||
+                        viewModel.kotatsuTagFilter != selectedKotatsuTags
+                    ) {
+                        viewModel.comicLanguageSetting = selectedLanguage
+                        if (selectedLanguage == ComicLanguageSetting.Japanese) {
+                            viewModel.kotatsuTagFilter = selectedKotatsuTags
+                        } else {
+                            viewModel.genreFilter = selectedGenre
+                            viewModel.themeFilter = selectedTheme
+                        }
+
+                        refreshSearchAction()
+                    }
+                }
             }
         }
     }

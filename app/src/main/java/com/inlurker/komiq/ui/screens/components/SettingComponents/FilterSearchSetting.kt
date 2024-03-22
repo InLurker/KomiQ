@@ -25,19 +25,23 @@ import com.inlurker.komiq.model.data.mangadexapi.constants.GenreTag
 import com.inlurker.komiq.model.data.mangadexapi.constants.ThemeTag
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.ToggleTags
+import org.koitharu.kotatsu.parsers.model.MangaTag
 
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FilterSearchSetting(
     currentComicLanguageSetting: ComicLanguageSetting,
     currentGenreFilter: List<GenreTag>,
     currentThemeFilter: List<ThemeTag>,
-    onApplySettings: (ComicLanguageSetting, List<GenreTag>, List<ThemeTag>) -> Unit
+    currentKotatsuTagFilter: List<MangaTag>,
+    kotatsuTagList: List<MangaTag>,
+    onApplySettings: (ComicLanguageSetting, List<GenreTag>, List<ThemeTag>, List<MangaTag>) -> Unit
 ) {
     var tempComicLanguageSetting by remember { mutableStateOf(currentComicLanguageSetting) }
     var tempGenreFilter = currentGenreFilter
     var tempThemeFilter = currentThemeFilter
+    var tempKotatsuTagFilter = currentKotatsuTagFilter
+
     Column {
         LazyColumn(
             userScrollEnabled = true,
@@ -62,63 +66,32 @@ fun FilterSearchSetting(
                 )
             }
 
-            item {
-                Text(
-                    text = "Genre",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            item {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    GenreTag.asList().forEach { genre ->
-                        var isButtonSelected by  remember { mutableStateOf(tempGenreFilter.contains(genre)) }
-                        ToggleTags(
-                            label = genre.description,
-                            isSelected = isButtonSelected,
-                            onStateChange = { isSelected ->
-                                isButtonSelected = isSelected
-                                if (isSelected) {
-                                    if (!tempGenreFilter.contains(genre)) tempGenreFilter = tempGenreFilter.plus(genre)
-                                } else {
-                                    tempGenreFilter = tempGenreFilter.minus(genre)
-                                }
-                            }
-                        )
-                    }
+            if (tempComicLanguageSetting == ComicLanguageSetting.Japanese) {
+                item {
+                    tempKotatsuTagFilter = tagFilterSelection(
+                        titleText = "Tags",
+                        tagSelection = currentKotatsuTagFilter,
+                        tagList = kotatsuTagList,
+                        displayOption = { it.title }
+                    )
                 }
-            }
+            } else {
+                item {
+                    tempGenreFilter = tagFilterSelection(
+                        titleText = "Genre",
+                        tagSelection = tempGenreFilter,
+                        tagList = GenreTag.asList(),
+                        displayOption = { it.description }
+                    )
+                }
 
-            item {
-                Text(
-                    text = "Theme",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            item {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    ThemeTag.asList().forEach { theme ->
-                        var isButtonSelected by remember { mutableStateOf(tempThemeFilter.contains(theme)) }
-                        ToggleTags(
-                            label = theme.description,
-                            isSelected = isButtonSelected,
-                            onStateChange = { isSelected ->
-                                isButtonSelected = isSelected
-                                if (isSelected) {
-                                    if (!tempThemeFilter.contains(theme)) tempThemeFilter = tempThemeFilter.plus(theme)
-                                } else {
-                                    tempThemeFilter = tempThemeFilter.minus(theme)
-                                }
-                            }
-                        )
-                    }
+                item {
+                    tempThemeFilter = tagFilterSelection(
+                        titleText = "Theme",
+                        tagSelection = tempThemeFilter,
+                        tagList = ThemeTag.asList(),
+                        displayOption = { it.description }
+                    )
                 }
             }
         }
@@ -129,7 +102,8 @@ fun FilterSearchSetting(
                     onApplySettings(
                         tempComicLanguageSetting,
                         tempGenreFilter,
-                        tempThemeFilter
+                        tempThemeFilter,
+                        tempKotatsuTagFilter
                     )
                 }
             ) {
@@ -139,6 +113,52 @@ fun FilterSearchSetting(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun <T> tagFilterSelection(
+    titleText: String,
+    tagSelection: List<T>,
+    tagList: List<T>,
+    displayOption: (T) -> String
+): List<T> {
+    var tempSelectionList = tagSelection
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = titleText,
+            fontWeight = FontWeight.SemiBold
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            tagList.forEach { tag ->
+                var isButtonSelected by remember {
+                    mutableStateOf(
+                        tempSelectionList.contains(
+                            tag
+                        )
+                    )
+                }
+                ToggleTags(
+                    label = displayOption(tag),
+                    isSelected = isButtonSelected,
+                    onStateChange = { isSelected ->
+                        isButtonSelected = isSelected
+                        if (isSelected) {
+                            if (!tempSelectionList.contains(tag))
+                                tempSelectionList = tempSelectionList.plus(tag)
+                        } else {
+                            tempSelectionList = tempSelectionList.minus(tag)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    return tempSelectionList
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -147,8 +167,9 @@ fun PreviewFilterSearchSetting() {
         currentComicLanguageSetting = ComicLanguageSetting.English,
         currentGenreFilter = listOf(),
         currentThemeFilter = listOf(),
-        onApplySettings = { _, _, _ ->
+        currentKotatsuTagFilter = listOf(),
+        kotatsuTagList = listOf()
+    ) { _, _, _, _ ->
 
-        }
-    )
+    }
 }
