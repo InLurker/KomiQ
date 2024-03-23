@@ -1,6 +1,7 @@
 package com.inlurker.komiq.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -298,32 +299,39 @@ fun DiscoverScreen(
                 },
                 sheetState = sheetState
             ) {
-                FilterSearchSetting(
-                    currentComicLanguageSetting = viewModel.comicLanguageSetting,
-                    currentGenreFilter = viewModel.genreFilter,
-                    currentThemeFilter = viewModel.themeFilter,
-                    currentKotatsuTagFilter = viewModel.kotatsuTagFilter.toList(),
-                    kotatsuTagList = kotatsuFilterList
-                ) { selectedLanguage, selectedGenre, selectedTheme, selectedKotatsuTags ->
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showBottomSheet = false
-                        }
-                    }
-                    if (viewModel.comicLanguageSetting != selectedLanguage ||
-                        viewModel.genreFilter != selectedGenre ||
-                        viewModel.themeFilter != selectedTheme ||
-                        viewModel.kotatsuTagFilter != selectedKotatsuTags
-                    ) {
-                        viewModel.comicLanguageSetting = selectedLanguage
-                        if (selectedLanguage == ComicLanguageSetting.Japanese) {
-                            viewModel.kotatsuTagFilter = selectedKotatsuTags
-                        } else {
-                            viewModel.genreFilter = selectedGenre
-                            viewModel.themeFilter = selectedTheme
-                        }
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 32.dp)
+                ) {
 
-                        refreshSearchAction()
+                    FilterSearchSetting(
+                        currentComicLanguageSetting = viewModel.comicLanguageSetting,
+                        currentGenreFilter = viewModel.genreFilter,
+                        currentThemeFilter = viewModel.themeFilter,
+                        currentKotatsuTagFilter = viewModel.kotatsuTagFilter.toList(),
+                        kotatsuTagList = kotatsuFilterList
+                    ) { selectedLanguage, selectedGenre, selectedTheme, selectedKotatsuTags ->
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
+                        }
+                        if (viewModel.comicLanguageSetting != selectedLanguage ||
+                            viewModel.genreFilter != selectedGenre ||
+                            viewModel.themeFilter != selectedTheme ||
+                            viewModel.kotatsuTagFilter != selectedKotatsuTags
+                        ) {
+                            viewModel.comicLanguageSetting = selectedLanguage
+                            if (selectedLanguage == ComicLanguageSetting.Japanese) {
+                                viewModel.kotatsuTagFilter = selectedKotatsuTags
+                            } else {
+                                viewModel.genreFilter = selectedGenre
+                                viewModel.themeFilter = selectedTheme
+                            }
+
+                            refreshSearchAction()
+                        }
                     }
                 }
             }

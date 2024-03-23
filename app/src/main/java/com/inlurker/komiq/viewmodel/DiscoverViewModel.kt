@@ -58,12 +58,6 @@ class DiscoverViewModel : ViewModel() {
 
     var kotatsuSortingMethod by mutableStateOf(SortOrder.POPULARITY)
     var kotatsuTagFilter by mutableStateOf(emptyList<MangaTag>())
-    var kotatsuContentRatingFilter by mutableStateOf(
-        setOf(
-            KotatsuContentRating.SAFE,
-            KotatsuContentRating.SUGGESTIVE
-        )
-    )
 
 
     @OptIn(InternalParsersApi::class)
@@ -87,7 +81,10 @@ class DiscoverViewModel : ViewModel() {
                                     tagsExclude = emptySet(),
                                     states = emptySet(),
                                     locale = null,
-                                    contentRating = kotatsuContentRatingFilter
+                                    contentRating = setOf(
+                                        KotatsuContentRating.SAFE,
+                                        KotatsuContentRating.SUGGESTIVE
+                                    )
                                 )
                             ).map {
                                 kotatsuMangaToComic(it)
@@ -117,7 +114,6 @@ class DiscoverViewModel : ViewModel() {
             }
         } catch (error: Exception) {
             listState = ListState.ERROR
-            // Handle error
         } finally {
             isLoading = false
         }

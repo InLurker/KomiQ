@@ -47,8 +47,7 @@ fun FilterSearchSetting(
             userScrollEnabled = true,
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
-                .padding(horizontal = 32.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = 16.dp)
                 .height(260.dp)
         ) {
             item {
@@ -68,29 +67,32 @@ fun FilterSearchSetting(
 
             if (tempComicLanguageSetting == ComicLanguageSetting.Japanese) {
                 item {
-                    tempKotatsuTagFilter = tagFilterSelection(
+                    TagFilterSelection(
                         titleText = "Tags",
                         tagSelection = currentKotatsuTagFilter,
                         tagList = kotatsuTagList,
-                        displayOption = { it.title }
+                        displayOption = { it.title },
+                        onSelectionChanged = { tempKotatsuTagFilter = kotatsuTagList }
                     )
                 }
             } else {
                 item {
-                    tempGenreFilter = tagFilterSelection(
+                    TagFilterSelection(
                         titleText = "Genre",
                         tagSelection = tempGenreFilter,
                         tagList = GenreTag.asList(),
-                        displayOption = { it.description }
+                        displayOption = { it.description },
+                        onSelectionChanged = { tempGenreFilter = it }
                     )
                 }
 
                 item {
-                    tempThemeFilter = tagFilterSelection(
+                    TagFilterSelection(
                         titleText = "Theme",
                         tagSelection = tempThemeFilter,
                         tagList = ThemeTag.asList(),
-                        displayOption = { it.description }
+                        displayOption = { it.description },
+                        onSelectionChanged = { tempThemeFilter = it }
                     )
                 }
             }
@@ -115,12 +117,13 @@ fun FilterSearchSetting(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun <T> tagFilterSelection(
+fun <T> TagFilterSelection(
     titleText: String,
     tagSelection: List<T>,
     tagList: List<T>,
-    displayOption: (T) -> String
-): List<T> {
+    displayOption: (T) -> String,
+    onSelectionChanged: (List<T>) -> Unit
+) {
     var tempSelectionList = tagSelection
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -145,19 +148,17 @@ fun <T> tagFilterSelection(
                     isSelected = isButtonSelected,
                     onStateChange = { isSelected ->
                         isButtonSelected = isSelected
-                        if (isSelected) {
-                            if (!tempSelectionList.contains(tag))
-                                tempSelectionList = tempSelectionList.plus(tag)
+                        tempSelectionList = if (isSelected) {
+                            tempSelectionList.plus(tag)
                         } else {
-                            tempSelectionList = tempSelectionList.minus(tag)
+                            tempSelectionList.minus(tag)
                         }
+                        onSelectionChanged(tempSelectionList)
                     }
                 )
             }
         }
     }
-
-    return tempSelectionList
 }
 
 @Preview(showBackground = true)
