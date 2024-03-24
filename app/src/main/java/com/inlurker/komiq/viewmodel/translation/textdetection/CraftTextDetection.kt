@@ -8,7 +8,7 @@ import com.chaquo.python.android.AndroidPlatform
 import java.io.ByteArrayOutputStream
 
 
-class CraftTextDetection(private val activityContext: Context) {
+class CraftTextDetection(activityContext: Context) {
     private val pythonInstance: Python
     private val module: PyObject
 

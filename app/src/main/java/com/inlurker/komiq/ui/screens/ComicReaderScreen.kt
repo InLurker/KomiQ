@@ -1,9 +1,11 @@
 package com.inlurker.komiq.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,11 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,16 +38,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.model.data.datamodel.Chapter
+import com.inlurker.komiq.model.data.datamodel.Comic
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.screens.components.PageImage
 import com.inlurker.komiq.ui.screens.components.PageReaders.DynamicPageReader
 import com.inlurker.komiq.ui.screens.components.ReaderSlider
@@ -53,6 +64,9 @@ import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterVolume
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.calculateColorFilterMatrix
 import com.inlurker.komiq.ui.theme.KomiQTheme
 import com.inlurker.komiq.viewmodel.ComicReaderViewModel
+import com.inlurker.komiq.viewmodel.translation.textdetection.CraftTextDetection
+import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -152,21 +166,61 @@ fun ComicReaderScreen(
                         .fillMaxSize()
                         .align(Alignment.Center)
                 ) {
+                    var newBitmap: Bitmap? by remember {
+                        mutableStateOf(null)
+                    }
                     Spacer(Modifier.weight(1f))
                     Row {
                         Spacer(Modifier.weight(1f))
+                        var translate by remember {
+                            mutableStateOf(false)
+                        }
+                        newBitmap?.let {
+                            println("showed")
+                            Image(it.asImageBitmap(), contentDescription = "")
+                        }
                         DynamicPageReader(
                             readingDirection = selectedReadingDirection,
                             pagerState = pagerState,
                             content = { page ->
-                                PageImage(
-                                    context = context,
-                                    imageUrl = viewModel.pagesUrl[page],
-                                    colorFilter = colorFilter,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                )
+                                var bitmap: Bitmap? by remember {
+                                    mutableStateOf(null)
+                                }
+                                LaunchedEffect(translate) {
+                                    bitmap = viewModel.comicPages[page] ?: viewModel.fetchComicPage(
+                                        page,
+                                        context
+                                    )
+                                }
+                                Column {
+                                    PageImage(
+                                        data = bitmap,
+                                        colorFilter = colorFilter,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    var processingTime by remember { mutableStateOf(0.0) }
+
+                                    var detectedPixels by remember { mutableStateOf(arrayOf<Array<FloatArray>>()) }
+                                    
+                                    viewModel.craftTextDetection = CraftTextDetection(LocalContext.current)
+                                    bitmap?.let {
+                                        Button(onClick = {
+                                            viewModel.detectText(it) { time, pixels ->
+                                                detectedPixels = pixels
+                                                bitmap = drawBoundingBoxes(bitmap!!, pixels)
+                                                processingTime = time
+                                            }
+                                        }
+                                        ) {
+                                            Text("Detect Text")
+                                        }
+                                    }
+                                    if (detectedPixels.isNotEmpty()) {
+                                        Text(processingTime.toString())
+                                    }
+                                }
+
                             }
                         )
                         Spacer(Modifier.weight(1f))
@@ -231,4 +285,42 @@ fun ComicReaderScreen(
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ComicReaderPreview() {
+    ComicRepository.currentComic = Comic(
+        id = "",
+        authors = listOf(),
+        tags = listOf(),
+        cover = "",
+        isInLibrary = false,
+        title = "",
+        altTitle = "",
+        description = "",
+        languageSetting = ComicLanguageSetting.English,
+        originalLanguage = "",
+        publicationDemographic = null,
+        status = "",
+        year = 0,
+        contentRating = "",
+        addedAt = null,
+        updatedAt = null,
+        url = null,
+        publicUrl = null
+    )
+    ComicRepository.currentChapter = Chapter(
+        id = "a1bd9359-c160-4fb5-acfe-3f0423441841",
+        volume = null,
+        chapter = 0.0f,
+        title = "",
+        publishAt = LocalDateTime.now(),
+        pages = 0,
+        scanlationGroup = "",
+        url = null,
+    )
+
+
+    ComicReaderScreen()
 }
