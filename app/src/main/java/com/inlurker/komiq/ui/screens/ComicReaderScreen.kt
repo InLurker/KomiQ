@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,6 +43,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.inlurker.komiq.ui.screens.components.PageImage
 import com.inlurker.komiq.ui.screens.components.PageReaders.DynamicPageReader
 import com.inlurker.komiq.ui.screens.components.ReaderSlider
 import com.inlurker.komiq.ui.screens.components.SettingComponents.ReaderSettings
@@ -100,7 +102,7 @@ fun ComicReaderScreen(
     ) {
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
-            sheetPeekHeight = 36.dp,
+            sheetPeekHeight = 48.dp,
             sheetSwipeEnabled = true,
             sheetContent = {
                 Column(
@@ -155,10 +157,17 @@ fun ComicReaderScreen(
                         Spacer(Modifier.weight(1f))
                         DynamicPageReader(
                             readingDirection = selectedReadingDirection,
-                            pagesUrl = viewModel.pagesUrl,
-                            colorFilter = colorFilter,
                             pagerState = pagerState,
-                            context = context
+                            content = { page ->
+                                PageImage(
+                                    context = context,
+                                    imageUrl = viewModel.pagesUrl[page],
+                                    colorFilter = colorFilter,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                )
+                            }
                         )
                         Spacer(Modifier.weight(1f))
                     }
