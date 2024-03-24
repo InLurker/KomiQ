@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,11 +59,6 @@ fun ComicReaderScreen(
     viewModel: ComicReaderViewModel = viewModel()
 ) {
     val context = LocalContext.current
-
-    LaunchedEffect(true) {
-        viewModel.getPages(context)
-    }
-
     val pagerState = rememberPagerState { viewModel.pagesUrl.size } // Adjust initial page index
 
     var selectedReadingDirection by remember { mutableStateOf(ReadingDirection.RightToLeft) }

@@ -1,10 +1,11 @@
 package com.inlurker.komiq.viewmodel
 
+import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.inlurker.komiq.model.data.datamodel.Chapter
 import com.inlurker.komiq.model.data.datamodel.Tag
@@ -20,7 +21,7 @@ import org.koitharu.kotatsu.parsers.model.MangaSource
 
 
 @OptIn(InternalParsersApi::class)
-class ComicDetailViewModel : ViewModel() {
+class ComicDetailViewModel(application: Application): AndroidViewModel(application) {
     var comic by mutableStateOf(
         ComicRepository.currentComic
     )
@@ -35,11 +36,11 @@ class ComicDetailViewModel : ViewModel() {
     var chapterList by mutableStateOf(emptyList<Chapter>())
         private set
 
-    suspend fun getComicDetail(context: Context) {
+    init {
         viewModelScope.launch {
             if (comic.languageSetting == ComicLanguageSetting.Japanese) {
                 val kotatsuParser = ComicRepository
-                    .getKotatsuLoaderContext(context)
+                    .getKotatsuLoaderContext(application as Context)
                     .newParserInstance(MangaSource.RAWKUMA)
                         as PagedMangaParser
 
@@ -65,10 +66,9 @@ class ComicDetailViewModel : ViewModel() {
                 genreList = comic.tags
 
                 chapterList = ComicRepository.getComicChapterList(comic.id, comic.languageSetting)
-
-                ComicRepository.isComicInLibrary(comic.id, comic.languageSetting).collect { isInLibrary ->
-                    isComicInLibrary = isInLibrary
-                }
+            }
+            ComicRepository.isComicInLibrary(comic.id, comic.languageSetting).collect { isInLibrary ->
+                isComicInLibrary = isInLibrary
             }
         }
     }

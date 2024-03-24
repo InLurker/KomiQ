@@ -90,10 +90,6 @@ fun ComicDetailScreen(
 ) {
     val context = LocalContext.current
 
-    LaunchedEffect(true) {
-        viewModel.getComicDetail(context)
-    }
-
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 

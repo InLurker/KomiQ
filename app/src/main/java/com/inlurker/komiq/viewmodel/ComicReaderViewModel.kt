@@ -1,11 +1,12 @@
 package com.inlurker.komiq.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapter
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.parsers.model.MangaSource
 
-class ComicReaderViewModel: ViewModel() {
+class ComicReaderViewModel(application: Application): AndroidViewModel(application) {
 
     var chapter by mutableStateOf(ComicRepository.currentChapter)
 
@@ -28,10 +29,10 @@ class ComicReaderViewModel: ViewModel() {
 
     lateinit var craftTextDetection: CraftTextDetection
 
-    suspend fun getPages(context: Context) {
+    init {
         viewModelScope.launch {
             pagesUrl = if (ComicRepository.currentComic.languageSetting == ComicLanguageSetting.Japanese) {
-                val mangaLoaderContext = ComicRepository.getKotatsuLoaderContext(context).newParserInstance(MangaSource.RAWKUMA)
+                val mangaLoaderContext = ComicRepository.getKotatsuLoaderContext(application as Context).newParserInstance(MangaSource.RAWKUMA)
                 val mangaPages = mangaLoaderContext.getPages(
                     chapterToKotatsuMangaChapter(chapter)
                 )
