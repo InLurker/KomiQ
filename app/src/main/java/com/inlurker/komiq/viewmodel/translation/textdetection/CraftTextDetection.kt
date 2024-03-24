@@ -5,8 +5,7 @@ import android.graphics.Bitmap
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.inlurker.komiq.viewmodel.utils.bitmapToByteArray
-import com.inlurker.komiq.viewmodel.utils.resizeImage
+import java.io.ByteArrayOutputStream
 
 
 class CraftTextDetection(private val activityContext: Context) {
@@ -33,7 +32,20 @@ class CraftTextDetection(private val activityContext: Context) {
         return result.toJava(Array<Array<FloatArray>>::class.java)
     }
 
+    private fun resizeImage(bitmap: Bitmap): Bitmap {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 600, 800, true)
+
+        return resizedBitmap
+    }
+
+    fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        return stream.toByteArray()
+    }
+
     fun endInference() {
         module.callAttr("end_inference")
     }
 }
+

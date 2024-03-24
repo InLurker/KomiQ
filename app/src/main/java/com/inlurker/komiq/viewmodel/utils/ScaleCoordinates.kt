@@ -1,15 +1,15 @@
 package com.inlurker.komiq.viewmodel.utils
 
-fun scaleCoordinates(coords: Array<Array<FloatArray>>, originalSize: Pair<Int, Int> = Pair(300, 400), targetSize: Pair<Int, Int>): Array<Array<FloatArray>> {
+fun scaleCoordinates(coords: Array<Array<FloatArray>>, originalSize: Pair<Int, Int>, targetSize: Pair<Int, Int>): Array<Array<FloatArray>> {
     val (originalWidth, originalHeight) = originalSize
     val (targetWidth, targetHeight) = targetSize
 
-    return coords.map { area ->
-        area.map { point ->
-            floatArrayOf(
-                (point[0] / originalWidth) * targetWidth,
-                (point[1] / originalHeight) * targetHeight
-            )
+    val ratioW = targetWidth.toFloat() / originalWidth
+    val ratioH = targetHeight.toFloat() / originalHeight
+
+    return coords.map { arr ->
+        arr.map { point ->
+            floatArrayOf(point[0] * ratioW, point[1] * ratioH)
         }.toTypedArray()
     }.toTypedArray()
 }

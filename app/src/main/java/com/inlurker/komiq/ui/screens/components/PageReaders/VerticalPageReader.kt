@@ -13,6 +13,37 @@ import androidx.compose.ui.layout.ContentScale
 import com.inlurker.komiq.ui.screens.components.PageImage
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
 
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DynamicPageReader(
+    readingDirection: ReadingDirection,
+    pagesUrl: List<String>,
+    colorFilter: ColorFilter,
+    pagerState: PagerState,
+    context: Context
+) {
+    when (readingDirection) {
+        ReadingDirection.LeftToRight, ReadingDirection.RightToLeft ->
+            HorizontalPageReader(
+                pagerState = pagerState,
+                pagesUrl = pagesUrl,
+                colorFilter = colorFilter,
+                readingDirection = readingDirection,
+                context = context
+            )
+
+        ReadingDirection.TopToBottom, ReadingDirection.BottomToTop ->
+            VerticalPageReader(
+                pagerState = pagerState,
+                pagesUrl = pagesUrl,
+                colorFilter = colorFilter,
+                readingDirection = readingDirection,
+                context = context
+            )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VerticalPageReader(
