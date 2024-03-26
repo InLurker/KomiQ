@@ -1,11 +1,13 @@
 package com.inlurker.komiq.ui.screens.components
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,7 +23,7 @@ import coil.compose.SubcomposeAsyncImage
 
 @Composable
 fun PageImage(
-    data: Any?,
+    data: State<Bitmap?>,
     colorFilter: ColorFilter,
     contentScale: ContentScale,
     modifier: Modifier = Modifier
@@ -32,7 +34,7 @@ fun PageImage(
 
     Box {
         SubcomposeAsyncImage(
-            model = data,
+            model = data.value,
             contentDescription = "Comic Chapter Page",
             contentScale = contentScale,
             colorFilter = colorFilter,
@@ -51,7 +53,7 @@ fun PageImage(
                 .align(Alignment.Center)
         )
 
-        if (isLoading || data == null)
+        if (isLoading || data.value == null)
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier

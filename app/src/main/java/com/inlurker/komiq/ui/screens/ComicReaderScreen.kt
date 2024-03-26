@@ -1,11 +1,9 @@
 package com.inlurker.komiq.ui.screens
 
-import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -29,16 +27,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -64,8 +61,6 @@ import com.inlurker.komiq.ui.screens.helper.Formatters.formatChapterVolume
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.calculateColorFilterMatrix
 import com.inlurker.komiq.ui.theme.KomiQTheme
 import com.inlurker.komiq.viewmodel.ComicReaderViewModel
-import com.inlurker.komiq.viewmodel.translation.textdetection.CraftTextDetection
-import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -74,8 +69,7 @@ fun ComicReaderScreen(
     navController: NavController = rememberNavController(),
     viewModel: ComicReaderViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    val pagerState = rememberPagerState { viewModel.pagesUrl.size } // Adjust initial page index
+    val pagerState = rememberPagerState { viewModel.pageUrls.size } // Adjust initial page index
 
     var selectedReadingDirection by remember { mutableStateOf(ReadingDirection.RightToLeft) }
     val sliderDirection by remember(selectedReadingDirection) {
@@ -166,65 +160,56 @@ fun ComicReaderScreen(
                         .fillMaxSize()
                         .align(Alignment.Center)
                 ) {
-                    var newBitmap: Bitmap? by remember {
-                        mutableStateOf(null)
+                    var translate by remember {
+                        mutableStateOf(false)
                     }
                     Spacer(Modifier.weight(1f))
+
+                    val context = LocalContext.current
+
+                    Button(onClick = {
+                        if (!viewModel.isCraftInitialized()) {
+                            viewModel.initializeCraft(context)
+                        }
+                        translate = !translate
+                    }) {
+                        Text("Toggle Translation: $translate")
+                    }
                     Row {
                         Spacer(Modifier.weight(1f))
-                        var translate by remember {
-                            mutableStateOf(false)
-                        }
-                        newBitmap?.let {
-                            println("showed")
-                            Image(it.asImageBitmap(), contentDescription = "")
-                        }
                         DynamicPageReader(
                             readingDirection = selectedReadingDirection,
                             pagerState = pagerState,
                             content = { page ->
-                                var bitmap: Bitmap? by remember {
-                                    mutableStateOf(null)
-                                }
-                                LaunchedEffect(translate) {
-                                    bitmap = viewModel.comicPages[page] ?: viewModel.fetchComicPage(
-                                        page,
-                                        context
-                                    )
-                                }
-                                Column {
+                                val comicPage = viewModel.getComicPage(page, context).observeAsState()
+
+                                if (translate && pagerState.currentPage == page) {
+                                    val translatedPage = viewModel.getTranslatedPage(page, context).observeAsState()
                                     PageImage(
-                                        data = bitmap,
+                                        data = translatedPage,
                                         colorFilter = colorFilter,
                                         contentScale = ContentScale.Fit,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    var processingTime by remember { mutableStateOf(0.0) }
-
-                                    var detectedPixels by remember { mutableStateOf(arrayOf<Array<FloatArray>>()) }
                                     
-                                    viewModel.craftTextDetection = CraftTextDetection(LocalContext.current)
-                                    bitmap?.let {
-                                        Button(onClick = {
-                                            viewModel.detectText(it) { time, pixels ->
-                                                detectedPixels = pixels
-                                                bitmap = drawBoundingBoxes(bitmap!!, pixels)
-                                                processingTime = time
-                                            }
-                                        }
-                                        ) {
-                                            Text("Detect Text")
-                                        }
+                                    if (translatedPage.value == null) {
+                                        Text(text = "Translating...")
                                     }
-                                    if (detectedPixels.isNotEmpty()) {
-                                        Text(processingTime.toString())
-                                    }
+                                } else {
+                                    PageImage(
+                                        data = comicPage,
+                                        colorFilter = colorFilter,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .zIndex(0f)
+                                    )
                                 }
-
                             }
                         )
                         Spacer(Modifier.weight(1f))
                     }
+
                     Spacer(Modifier.weight(1f))
                 }
 
