@@ -128,7 +128,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         val comicPageLiveData = comicPages[index].value
 
         comicPageLiveData?.let { bitmap ->
-
             detectText(
                 index,
                 bitmap,

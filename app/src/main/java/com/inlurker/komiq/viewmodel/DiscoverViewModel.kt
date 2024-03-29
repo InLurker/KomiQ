@@ -71,34 +71,45 @@ class DiscoverViewModel : ViewModel() {
                 comicSearchQuery.copy(offsetAmount = comicList.size)
 
             if (comicLanguageSetting == ComicLanguageSetting.Japanese) {
-                val retrievedComic =
-                        if (searchQuery.isEmpty()) {
-                            kotatsuParser.getListPage(
-                                page = currentPage,
-                                filter = MangaListFilter.Advanced(
-                                    sortOrder = kotatsuSortingMethod,
-                                    tags = kotatsuTagFilter.toSet(),
-                                    tagsExclude = emptySet(),
-                                    states = emptySet(),
-                                    locale = null,
-                                    contentRating = setOf(
-                                        KotatsuContentRating.SAFE,
-                                        KotatsuContentRating.SUGGESTIVE
-                                    )
+                val retrievedComic = try {
+                    if (searchQuery.isEmpty()) {
+                        kotatsuParser.getListPage(
+                            page = currentPage,
+                            filter = MangaListFilter.Advanced(
+                                sortOrder = kotatsuSortingMethod,
+                                tags = kotatsuTagFilter.toSet(),
+                                tagsExclude = emptySet(),
+                                states = emptySet(),
+                                locale = null,
+                                contentRating = setOf(
+                                    KotatsuContentRating.SAFE,
+                                    KotatsuContentRating.SUGGESTIVE
                                 )
-                            ).map {
-                                kotatsuMangaToComic(it)
-                            }
-                        } else {
-                            kotatsuParser.getListPage(
-                                page = currentPage,
-                                filter = MangaListFilter.Search(searchQuery)
-                            ).map {
-                                kotatsuMangaToComic(it)
-                            }
+                            )
+                        ).map {
+                            kotatsuMangaToComic(it)
                         }
-                currentPage++
-                comicList.addAll(retrievedComic)
+                    } else {
+                        kotatsuParser.getListPage(
+                            page = currentPage,
+                            filter = MangaListFilter.Search(searchQuery)
+                        ).map {
+                            kotatsuMangaToComic(it)
+                        }
+                    }
+                } catch (e: Exception) {
+                    println(e.message)
+                    emptyList()
+                }
+
+                if (retrievedComic.isEmpty()) {
+                    isPaginationExhausted = true
+                    listState = ListState.PAGINATION_EXHAUST
+                } else {
+                    currentPage++
+                    comicList.addAll(retrievedComic)
+                    listState = ListState.IDLE
+                }
             } else {
                 ComicRepository.getComicList(updatedComicSearchQuery, comicLanguageSetting)
                     .collect { comics ->
