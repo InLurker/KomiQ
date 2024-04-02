@@ -22,7 +22,7 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
-import com.inlurker.komiq.viewmodel.translation.textdetection.CraftTextDetection
+import com.inlurker.komiq.model.data.textdetection.CraftTextDetection
 import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
