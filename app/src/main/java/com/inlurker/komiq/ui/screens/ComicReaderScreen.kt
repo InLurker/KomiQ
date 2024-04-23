@@ -4,8 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -191,37 +194,57 @@ fun ComicReaderScreen(
                                     val translatedPage = viewModel.getTranslatedPage(page, context).observeAsState()
 
                                     if (translatedPage.value != null) {
-                                        PageImage(
-                                            data = translatedPage,
-                                            colorFilter = colorFilter,
-                                            contentScale = ContentScale.Fit,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
+                                        Column {
+                                            PageImage(
+                                                data = translatedPage,
+                                                colorFilter = colorFilter,
+                                                contentScale = ContentScale.Fit,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Row {
+                                                viewModel.croppedBitmaps.forEach { bitmap ->
+                                                    Image(
+                                                        bitmap = bitmap.asImageBitmap(),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.height(100.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                     } else {
                                         Box(
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier = Modifier
+                                                .fillMaxSize(),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             CircularProgressIndicator(
+                                                color = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier
-                                                    .size(50.dp)
+                                                    .size(60.dp)
                                                     .align(Alignment.Center)
+                                                    .padding(16.dp)
                                                     .zIndex(2f)
                                             )
                                             Box(
                                                 modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .background(color = Color.Black.copy(alpha = 0.5f))
-                                                    .zIndex(1f)
-                                            )
-                                            PageImage(
-                                                data = comicPage,
-                                                colorFilter = colorFilter,
-                                                contentScale = ContentScale.Fit,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
+                                                    .align(Alignment.Center)
                                                     .zIndex(0f)
-                                            )
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .matchParentSize()
+                                                        .background(color = Color.Black.copy(alpha = 0.5f))
+                                                        .zIndex(1f)
+                                                )
+                                                PageImage(
+                                                    data = comicPage,
+                                                    colorFilter = colorFilter,
+                                                    contentScale = ContentScale.Fit,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .zIndex(0f)
+                                                )
+                                            }
                                         }
                                     }
                                 } else {
@@ -238,7 +261,6 @@ fun ComicReaderScreen(
                         )
                         Spacer(Modifier.weight(1f))
                     }
-
                     Spacer(Modifier.weight(1f))
                 }
 

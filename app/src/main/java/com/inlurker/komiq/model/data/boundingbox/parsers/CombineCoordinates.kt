@@ -1,36 +1,47 @@
 package com.inlurker.komiq.model.data.boundingbox.parsers
 
-fun combineCoordinates(boxes: Array<Array<FloatArray>>): Array<Array<FloatArray>> {
-    val result = mutableListOf<Array<FloatArray>>()
+import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 
-    // Step 1: Sort and filter overlapping boxes
+fun combineAndConvertBoxes(boxes: Array<Array<FloatArray>>): List<BoundingBox> {
+    val result = mutableListOf<BoundingBox>()
+
+    // Sort and prepare boxes for merging
     val sortedBoxes = boxes.map { box ->
         val x1 = box.minOf { it[0] }
         val y1 = box.minOf { it[1] }
         val x2 = box.maxOf { it[0] }
         val y2 = box.maxOf { it[1] }
         arrayOf(floatArrayOf(x1, y1), floatArrayOf(x2, y2))
-    }.sortedWith(compareBy({ it[0][0] }, { it[0][1] })) // Sort by x1 then y1
+    }.sortedWith(compareBy({ it[0][0] }, { it[0][1] }))
 
-    // Step 2: Merge boxes
+    // Start with the first box as the current box to compare others against
     var current = sortedBoxes[0]
     for (box in sortedBoxes) {
         if (isInside(current, box)) {
-            // Extend the current box if necessary
+            // If box is inside, extend the current bounding box if necessary
             current[1][0] = maxOf(current[1][0], box[1][0])
             current[1][1] = maxOf(current[1][1], box[1][1])
         } else {
-            // Add the current box to result and update current to new box
-            result.add(current)
+            // Add the current box as a BoundingBox to the result list
+            result.add(createBoundingBox(current))
             current = box
         }
     }
-    result.add(current) // Add the last box
+    // Add the last processed box
+    result.add(createBoundingBox(current))
 
-    return result.toTypedArray()
+    return result
 }
-
 fun isInside(outerBox: Array<FloatArray>, innerBox: Array<FloatArray>): Boolean {
     return innerBox[0][0] >= outerBox[0][0] && innerBox[0][1] >= outerBox[0][1] &&
             innerBox[1][0] <= outerBox[1][0] && innerBox[1][1] <= outerBox[1][1]
+}
+
+fun createBoundingBox(box: Array<FloatArray>): BoundingBox {
+    // You may round these values if necessary
+    val x1 = box[0][0]
+    val y1 = box[0][1]
+    val x2 = box[1][0]
+    val y2 = box[1][1]
+    return BoundingBox(x1, y1, x2, y2)
 }

@@ -2,26 +2,8 @@ package com.inlurker.komiq.model.translation.mangaocr
 
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.JsonParser
-import com.inlurker.komiq.BuildConfig
-import com.inlurker.komiq.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.inlurker.komiq.viewmodel.utils.bitmapToByteArray
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -30,7 +12,6 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -104,9 +85,7 @@ object MangaOCRService {
     }
 
     private fun bitmapToRequestBody(bitmap: Bitmap): RequestBody {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        val byteArray = outputStream.toByteArray()
+        val byteArray = bitmapToByteArray(bitmap)
         return byteArray.toRequestBody("application/octet-stream".toMediaTypeOrNull())
     }
 
@@ -117,46 +96,5 @@ object MangaOCRService {
 
     private class QueuedRequest(val request: Request, val callback: (Response?) -> Unit) {
         var isRunning: Boolean = false
-    }
-}
-
-class MangaOcrApiManagerViewModel : ViewModel() {
-
-    private val apiKey = BuildConfig.HUGGINGFACE_API_TOKEN  // Use your actual Hugging Face API key
-
-    fun processImage(bitmap: Bitmap, callback: (String?) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) { // Use Dispatchers.IO for network operations
-            MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
-                callback(result)
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun OCRResultDisplayWithButton() {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var ocrResult by remember { mutableStateOf<String?>(null) }
-    val mangaOcrApiManager = viewModel<MangaOcrApiManagerViewModel>() // Access the ViewModel
-    var text by remember { mutableStateOf("Click the button to process the image.") }
-
-    Column {
-        Text(text = BuildConfig.HUGGINGFACE_API_TOKEN)
-        Button(onClick = {
-            text = "Processing..."
-            scope.launch {
-                val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.sample) // Replace 'sample' with your actual drawable's name
-                mangaOcrApiManager.processImage(bitmap) { result ->
-                    ocrResult = result
-                }
-            }
-        }) {
-            Text("Process Image")
-        }
-
-        // Display the OCR result or a default message
-        Text(text = ocrResult ?: text)
     }
 }

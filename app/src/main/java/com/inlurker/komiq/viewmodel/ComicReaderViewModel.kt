@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,11 +17,13 @@ import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.inlurker.komiq.BuildConfig
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapter
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.model.translation.mangaocr.MangaOCRService
 import com.inlurker.komiq.model.translation.textdetection.CraftTextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
@@ -28,11 +31,15 @@ import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
 import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.parsers.model.MangaSource
 
 class ComicReaderViewModel(application: Application): AndroidViewModel(application) {
+    private val apiKey = BuildConfig.HUGGINGFACE_API_TOKEN  // Use your actual Hugging Face API key
 
     var chapter by mutableStateOf(ComicRepository.currentChapter)
 
@@ -55,6 +62,9 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     var comicPages = arrayOf<MutableLiveData<Bitmap>>()
 
     var translatedPages = arrayOf<MutableLiveData<Bitmap>>()
+
+    var croppedBitmaps by mutableStateOf(listOf<Bitmap>())
+    var recognisedText by mutableStateOf(listOf<String>())
 
     fun updateComicPage(index: Int, page: Bitmap) {
         if (index < comicPages.size) {
@@ -154,6 +164,18 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
                 onResult = { _, boundingBoxes ->
                     // Use postValue since this might be called from a background thread
                     translatedPageLiveData.postValue(drawBoundingBoxes(bitmap, boundingBoxes))
+
+                    croppedBitmaps = cropBitmaps(bitmap, boundingBoxes)
+                    enqueueToMangaOCR(croppedBitmaps) { result ->
+                        recognisedText = mutableListOf()
+                        result.withIndex().forEach { text ->
+                            text.value?.let { value ->
+                                val textWIthInde = text.index.toString() + ". " + value
+                                Log.d("OCR",textWIthInde)
+                                recognisedText += textWIthInde
+                            }
+                        }
+                    }
                 }
             )
         }
@@ -193,6 +215,39 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         val bitmap = result.toBitmap()
 
         comicPages[index].postValue(bitmap)
+    }
+
+    fun cropBitmaps(sourceBitmap: Bitmap, boundingBoxes: List<BoundingBox>): List<Bitmap> {
+        val croppedBitmaps = mutableListOf<Bitmap>()
+        for (box in boundingBoxes) {
+            croppedBitmaps.add(cropBitmap(sourceBitmap, box))
+        }
+        return croppedBitmaps
+    }
+
+    fun cropBitmap(sourceBitmap: Bitmap, boundingBox: BoundingBox): Bitmap {
+        // Calculate the width and height of the cropped area
+        val width = (boundingBox.X2 - boundingBox.X1).toInt()
+        val height = (boundingBox.Y2 - boundingBox.Y1).toInt()
+
+        // Crop the bitmap based on the bounding box coordinates
+        return Bitmap.createBitmap(sourceBitmap, boundingBox.X1.toInt(), boundingBox.Y1.toInt(), width, height)
+    }
+
+    fun enqueueToMangaOCR(bitmaps: List<Bitmap>, callback: (List<String?>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) { // Use Dispatchers.IO for network operations
+            // Launch a coroutine for each bitmap and await all results
+            val results = bitmaps.map { bitmap ->
+                async { // async is used to perform the operation concurrently
+                    val deferredResult = CompletableDeferred<String?>()
+                    MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
+                        deferredResult.complete(result) // Complete the deferred with the result
+                    }
+                    deferredResult.await() // Await for the result to be completed
+                }
+            }.awaitAll() // awaitAll waits for all async operations to complete and gathers the results
+            callback(results) // Callback with the list of results
+        }
     }
 
     fun isCraftInitialized() = ::craftTextDetection.isInitialized
