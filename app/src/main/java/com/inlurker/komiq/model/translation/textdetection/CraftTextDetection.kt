@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.data.textdetection
+package com.inlurker.komiq.model.translation.textdetection
 
 import android.content.Context
 import android.graphics.Bitmap
