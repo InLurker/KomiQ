@@ -22,7 +22,11 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.model.translation.textdetection.CraftTextDetection
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
+import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
 import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,6 +35,18 @@ import org.koitharu.kotatsu.parsers.model.MangaSource
 class ComicReaderViewModel(application: Application): AndroidViewModel(application) {
 
     var chapter by mutableStateOf(ComicRepository.currentChapter)
+
+    val comicLanguage = ComicRepository.currentComic.languageSetting
+
+    var autoTranslateSettings by mutableStateOf(
+        AutomaticTranslationSettingsData(
+            enabled = false,
+            sourceLanguage = comicLanguage,
+            textDetection = TextDetection.CRAFT,
+            textRecognition = TextRecognition.getOptionList(comicLanguage).first(),
+            translationEngine = TranslationEngine.Google
+        )
+    )
 
     var pageUrls by mutableStateOf(emptyList<String>())
         private set
@@ -103,6 +119,10 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     }
 
     fun getTranslatedPage(index: Int, context: Context): LiveData<Bitmap> {
+        if (!isCraftInitialized()) {
+            craftTextDetection = CraftTextDetection(context)
+        }
+
         val comicPageFlow = getComicPage(index, context).asFlow()
 
         // Launch a coroutine to wait for the comic page to be non-null and then proceed with translation

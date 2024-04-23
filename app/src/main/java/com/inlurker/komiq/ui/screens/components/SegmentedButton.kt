@@ -42,7 +42,6 @@ fun SegmentedButton(
 ) {
     Row(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface)
             .clip(MaterialTheme.shapes.medium)
             .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
             .height(40.dp)
@@ -91,6 +90,7 @@ fun SegmentedButtonItem(
         colors = buttonColor,
         shape = RectangleShape,
         modifier = modifier
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AnimatedVisibility(

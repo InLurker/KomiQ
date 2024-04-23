@@ -22,10 +22,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.toSize
-import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
+import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 
 @Composable
 fun <T> SettingsDropdown(
@@ -98,7 +101,7 @@ fun LanguageDropdownSettings(
         label = label,
         options = options,
         currentSelection = currentSelection,
-        displayOption = { it.languageDisplayName() }, // Use the languageDisplayName function to display each language
+        displayOption = { it.languageDisplayName() },
         modifier = modifier,
         dropdownModifier = dropdownModifier,
         onOptionSelected = { index -> onLanguageSelected(options[index]) }
@@ -118,7 +121,7 @@ fun ReadingDirectionDropdownSettings(
         label = label,
         options = options,
         currentSelection = currentSelection,
-        displayOption = { it.description }, // Use the languageDisplayName function to display each language
+        displayOption = { it.description },
         modifier = modifier,
         dropdownModifier = dropdownModifier,
         onOptionSelected = { index -> onReadingDirectionSelected(options[index]) }
@@ -138,10 +141,70 @@ fun ReaderBackgroundDropdownSettings(
         label = label,
         options = options,
         currentSelection = currentSelection,
-        displayOption = { it.description }, // Use the languageDisplayName function to display each language
+        displayOption = { it.description },
         modifier = modifier,
         dropdownModifier = dropdownModifier,
         onOptionSelected = { index -> onReaderBackgroundSelected(options[index]) }
+    )
+}
+
+@Composable
+fun TextDetectionDropdownSettings(
+    label: String,
+    options: List<TextDetection>,
+    currentSelection: TextDetection,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onTextDetectionSelected: (TextDetection) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.description },
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onTextDetectionSelected(options[index]) }
+    )
+}
+
+@Composable
+fun TextRecognitionDropdownSettings(
+    label: String,
+    options: List<TextRecognition>,
+    currentSelection: TextRecognition,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onTextRecognitionSelected: (TextRecognition) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.description }, // Use the languageDisplayName function to display each language
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onTextRecognitionSelected(options[index]) }
+    )
+}
+
+@Composable
+fun TranslationEngineDropdownSettings(
+    label: String,
+    options: List<TranslationEngine>,
+    currentSelection: TranslationEngine,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onTranslationEngineSelected: (TranslationEngine) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.description },
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onTranslationEngineSelected(options[index]) }
     )
 }
 

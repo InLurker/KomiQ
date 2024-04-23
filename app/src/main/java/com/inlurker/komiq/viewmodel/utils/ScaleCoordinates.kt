@@ -4,6 +4,7 @@ fun scaleCoordinates(coords: Array<Array<FloatArray>>, originalSize: Pair<Int, I
     val (originalWidth, originalHeight) = originalSize
     val (targetWidth, targetHeight) = targetSize
 
+
     val ratioW = targetWidth.toFloat() / originalWidth
     val ratioH = targetHeight.toFloat() / originalHeight
 
