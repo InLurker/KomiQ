@@ -15,7 +15,7 @@ import tflite_runtime.interpreter as tflite
 from os.path import dirname, join
 
 text_threshold = 0.7
-link_threshold = 0.003
+link_threshold = 0.002
 low_text = 0.3
 canvas_size = 800
 poly=False

@@ -7,6 +7,7 @@ import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
+import com.inlurker.komiq.model.data.boundingbox.parsers.combineCoordinates
 import com.inlurker.komiq.model.data.boundingbox.parsers.coordinatesToBoundingBox
 import com.inlurker.komiq.viewmodel.utils.scaleCoordinates
 import kotlinx.coroutines.CoroutineScope
@@ -96,8 +97,10 @@ class CraftTextDetection(activityContext: Context) {
         val result: Array<Array<FloatArray>> = module.callAttr("detect_text", bitmapToByteArray(resizedBitmap))
             .toJava(Array<Array<FloatArray>>::class.java)
 
+        val combinedResult = combineCoordinates(result)
+
         val scaledResult = scaleCoordinates(
-            result,
+            combinedResult,
             Pair(300, 400),
             Pair(bitmap.width, bitmap.height)
         )
