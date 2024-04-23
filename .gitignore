@@ -29,3 +29,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Properties
+tokens.properties
