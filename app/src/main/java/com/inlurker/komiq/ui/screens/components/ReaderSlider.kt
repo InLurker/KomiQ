@@ -101,7 +101,7 @@ fun ReaderSlider(
                         .padding(vertical = 4.dp)
                 )
                 Text(
-                    text = (totalPages + 1).toString(),
+                    text = (totalPages).toString(),
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
