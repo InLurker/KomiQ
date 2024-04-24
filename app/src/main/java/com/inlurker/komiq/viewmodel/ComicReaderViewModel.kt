@@ -49,7 +49,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 
     val comicLanguage = ComicRepository.currentComic.languageSetting
 
-    var autoTranslateSettings by mutableStateOf(
+    private var _autoTranslateSettings = mutableStateOf(
         AutomaticTranslationSettingsData(
             enabled = false,
             sourceLanguage = comicLanguage,
@@ -58,6 +58,20 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             translationEngine = TranslationEngine.Google
         )
     )
+
+    var autoTranslateSettings: AutomaticTranslationSettingsData
+        get() = _autoTranslateSettings.value
+        set(value) {
+            // Check if there are changes in the relevant properties
+            if (value.sourceLanguage != _autoTranslateSettings.value.sourceLanguage ||
+                value.textDetection != _autoTranslateSettings.value.textDetection ||
+                value.textRecognition != _autoTranslateSettings.value.textRecognition ||
+                value.translationEngine != _autoTranslateSettings.value.translationEngine) {
+                resetTranslatedPagesAndProcess()
+            }
+            _autoTranslateSettings.value = value
+        }
+
 
     var pageUrls by mutableStateOf(emptyList<String>())
         private set
@@ -70,18 +84,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     private val pagesInProcess = mutableSetOf<Int>()
 
     var croppedBitmaps by mutableStateOf(listOf<Bitmap>())
-
-    fun updateComicPage(index: Int, page: Bitmap) {
-        if (index < comicPages.size) {
-            comicPages[index].value = page
-        }
-    }
-
-    fun updateTranslatedPage(index: Int, page: Bitmap) {
-        if (index < translatedPages.size) {
-            translatedPages[index].value = page
-        }
-    }
 
     lateinit var craftTextDetection: CraftTextDetection
     lateinit var imageLoader: ImageLoader
@@ -268,6 +270,13 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     }
 
     fun isCraftInitialized() = ::craftTextDetection.isInitialized
+
+    private fun resetTranslatedPagesAndProcess() {
+        for(i in translatedPages.indices) {
+            translatedPages[i].postValue(null)  // Set to null or a default Bitmap
+        }
+        pagesInProcess.clear()
+    }
 
     private fun String?.removeSpaces(): String? {
         return this?.replace(" ", "")
