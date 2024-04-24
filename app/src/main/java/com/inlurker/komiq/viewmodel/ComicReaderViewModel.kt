@@ -23,6 +23,7 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapte
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.model.translation.googletranslate.GoogleTranslateService
 import com.inlurker.komiq.model.translation.mangaocr.MangaOCRService
 import com.inlurker.komiq.model.translation.textdetection.CraftTextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
@@ -30,13 +31,16 @@ import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
-import com.inlurker.komiq.viewmodel.utils.drawBoundingBoxes
-import kotlinx.coroutines.CompletableDeferred
+import com.inlurker.komiq.viewmodel.utils.imageutils.drawTranslatedText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.parsers.model.MangaSource
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class ComicReaderViewModel(application: Application): AndroidViewModel(application) {
     private val apiKey = BuildConfig.HUGGINGFACE_API_TOKEN  // Use your actual Hugging Face API key
@@ -63,8 +67,9 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 
     var translatedPages = arrayOf<MutableLiveData<Bitmap>>()
 
+    private val pagesInProcess = mutableSetOf<Int>()
+
     var croppedBitmaps by mutableStateOf(listOf<Bitmap>())
-    var recognisedText by mutableStateOf(listOf<String>())
 
     fun updateComicPage(index: Int, page: Bitmap) {
         if (index < comicPages.size) {
@@ -116,86 +121,96 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         craftTextDetection.endInference()
     }
 
-    fun getComicPage(index: Int, context: Context): LiveData<Bitmap> {
-        val page = comicPages[index]
+    fun getComicPage(pageIndex: Int, context: Context): LiveData<Bitmap> {
+        val page = comicPages[pageIndex]
 
         if (page.value == null) {
             viewModelScope.launch {
-                fetchComicPage(index, context)
+                fetchComicPage(pageIndex, context)
             }
         }
 
         return page
     }
 
-    fun getTranslatedPage(index: Int, context: Context): LiveData<Bitmap> {
+    fun getTranslatedPage(pageIndex: Int, context: Context): LiveData<Bitmap> {
+        if (pagesInProcess.contains(pageIndex)) {
+            // Page is already being processed, so just return
+            return translatedPages[pageIndex]
+        }
+
+
         if (!isCraftInitialized()) {
             craftTextDetection = CraftTextDetection(context)
         }
 
-        val comicPageFlow = getComicPage(index, context).asFlow()
+        pagesInProcess.add(pageIndex)
+
+        val comicPageFlow = getComicPage(pageIndex, context).asFlow()
 
         // Launch a coroutine to wait for the comic page to be non-null and then proceed with translation
         viewModelScope.launch {
             comicPageFlow.collect { _ ->
                 // At this point, bitmap is not null. Now, trigger the translation.
-                translatePage(index)
+                translatePage(pageIndex, context)
             }
         }
 
         // Return the LiveData directly. The above coroutine will update it when the translation is done.
-        return translatedPages[index]
+        return translatedPages[pageIndex]
     }
 
-    fun translatePage(index: Int) {
-        val translatedPageLiveData = translatedPages[index]
+    private suspend fun translatePage(pageIndex: Int, context: Context) {
+        val translatedPageLiveData = translatedPages[pageIndex]
 
         // Check if there's already a translated page or if the comic page is null
         if (translatedPageLiveData.value != null) {
             return
         }
 
-        val comicPageLiveData = comicPages[index].value
+        val comicPageLiveData = comicPages[pageIndex].value
 
         comicPageLiveData?.let { bitmap ->
-            detectText(
-                index,
-                bitmap,
-                onResult = { _, boundingBoxes ->
-                    // Use postValue since this might be called from a background thread
-                    translatedPageLiveData.postValue(drawBoundingBoxes(bitmap, boundingBoxes))
+            viewModelScope.launch {  // Ensure this scope runs within the suspend function
+                val translations = processAndTranslate(pageIndex, bitmap)
 
-                    croppedBitmaps = cropBitmaps(bitmap, boundingBoxes)
-                    enqueueToMangaOCR(croppedBitmaps) { result ->
-                        recognisedText = mutableListOf()
-                        result.withIndex().forEach { text ->
-                            text.value?.let { value ->
-                                val textWIthInde = text.index.toString() + ". " + value
-                                Log.d("OCR",textWIthInde)
-                                recognisedText += textWIthInde
-                            }
-                        }
-                    }
-                }
-            )
+                // Now draw the translated text after the translations are completed
+                val translatedPage = drawTranslatedText(context, bitmap, translations)
+                translatedPageLiveData.postValue(translatedPage)
+            }
         }
     }
 
-    fun detectText(
-        index: Int,
-        bitmap: Bitmap,
-        onResult: (Double, List<BoundingBox>) -> Unit
-    ) = viewModelScope.launch(Dispatchers.IO) {
-        // Start time recorded just before the coroutine begins processing
-        val startTime = System.currentTimeMillis()
+    suspend fun processAndTranslate(pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>> {
+        val boundingBoxes = withContext(Dispatchers.IO) {
+            detectText(pageIndex, bitmap)  // Assuming detectText is a suspend function
+        }
+        val croppedBitmaps = cropBitmaps(bitmap, boundingBoxes)
+        this.croppedBitmaps = croppedBitmaps
 
-        // Call the Python module on the IO dispatcher (background thread)
-        craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
-            // Calculate the processing time
-            val endTime = System.currentTimeMillis()
-            val processingTime = (endTime - startTime) / 1000.0
+        // Process OCR and translation in parallel and then collect results
+        return coroutineScope {
+            croppedBitmaps.mapIndexed { idx, croppedBitmap ->
+                async {
+                    val recognizedText = enqueueToMangaOCR(croppedBitmap, apiKey)  // Ensure enqueueToMangaOCR is a suspend function
+                    Log.d("OCR", "Recognized Text for index $idx: $recognizedText") // Logging the recognized text
+                    recognizedText?.let {
+                        if (!it.hasOnlyGarbage()) {
+                            val translatedText = enqueueToGoogleTranslate(it)  // Ensure enqueueToGoogleTranslate is a suspend function
+                            Log.d("GoogleTL", "Translated Text for index $idx: $translatedText") // Logging the translated text
+                            if (translatedText != null) Pair(boundingBoxes[idx], translatedText) else null
+                        } else null
+                    }
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
 
-            onResult(processingTime, boundingBoxes)
+    suspend fun detectText(index: Int, bitmap: Bitmap): List<BoundingBox> = withContext(Dispatchers.IO) {
+        suspendCoroutine { continuation ->
+            craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
+                continuation.resume(boundingBoxes)
+            }
         }
     }
 
@@ -234,22 +249,34 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         return Bitmap.createBitmap(sourceBitmap, boundingBox.X1.toInt(), boundingBox.Y1.toInt(), width, height)
     }
 
-    fun enqueueToMangaOCR(bitmaps: List<Bitmap>, callback: (List<String?>) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) { // Use Dispatchers.IO for network operations
-            // Launch a coroutine for each bitmap and await all results
-            val results = bitmaps.map { bitmap ->
-                async { // async is used to perform the operation concurrently
-                    val deferredResult = CompletableDeferred<String?>()
-                    MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
-                        deferredResult.complete(result) // Complete the deferred with the result
-                    }
-                    deferredResult.await() // Await for the result to be completed
-                }
-            }.awaitAll() // awaitAll waits for all async operations to complete and gathers the results
-            callback(results) // Callback with the list of results
+    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String): String? = withContext(Dispatchers.IO) {
+        suspendCoroutine { cont ->
+            MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
+                cont.resume(result.removeSpaces())
+            }
+        }
+    }
+
+    suspend fun enqueueToGoogleTranslate(sourceText: String):String? = withContext(Dispatchers.IO) {
+        suspendCoroutine { cont ->
+            GoogleTranslateService.enqueueTranslateRequest(
+                sourceText, comicLanguage.isoCode, ComicLanguageSetting.English.isoCode
+            ) { result ->
+                cont.resume(result)
+            }
         }
     }
 
     fun isCraftInitialized() = ::craftTextDetection.isInitialized
+
+    private fun String?.removeSpaces(): String? {
+        return this?.replace(" ", "")
+    }
+
+    private fun String.hasOnlyGarbage(): Boolean {
+        // This regex checks if the string does not contain any Unicode letter or number.
+        // `\\p{L}` matches any letter from any language, and `\\p{N}` matches any numeric digit.
+        return !this.any { it.toString().matches(Regex("[\\p{L}\\p{N}]")) }
+    }
 }
 

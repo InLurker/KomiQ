@@ -1,4 +1,4 @@
-package com.inlurker.komiq.viewmodel.utils
+package com.inlurker.komiq.viewmodel.utils.imageutils
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -22,10 +22,4 @@ fun drawBoundingBoxes(inputImage: Bitmap, boxes: List<BoundingBox>): Bitmap {
     }
 
     return outputImage
-}
-
-fun resizeImage(bitmap: Bitmap): Bitmap {
-    val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 600, 800, true)
-
-    return resizedBitmap
 }
