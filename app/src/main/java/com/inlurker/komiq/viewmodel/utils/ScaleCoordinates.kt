@@ -6,13 +6,15 @@ fun scaleCoordinates(coords: Array<Array<FloatArray>>, originalSize: Pair<Int, I
     val (originalWidth, originalHeight) = originalSize
     val (targetWidth, targetHeight) = targetSize
 
+    val newWidth = targetWidth.toFloat()
+    val newHeight  = targetHeight.toFloat()
 
-    val ratioW = targetWidth.toFloat() / originalWidth
-    val ratioH = targetHeight.toFloat() / originalHeight
+    val ratioW = newWidth / originalWidth
+    val ratioH = newHeight / originalHeight
 
     return coords.map { arr ->
         arr.map { point ->
-            floatArrayOf(point[0] * ratioW, point[1] * ratioH)
+            floatArrayOf((point[0] * ratioW).coerceIn(0f, newWidth), (point[1] * ratioH).coerceIn(0f, newHeight))
         }.toTypedArray()
     }.toTypedArray()
 }
@@ -21,15 +23,17 @@ fun scaleBoundingBoxes(boundingBoxes: List<BoundingBox>, originalSize: Pair<Int,
     val (originalWidth, originalHeight) = originalSize
     val (targetWidth, targetHeight) = targetSize
 
-    val ratioW = targetWidth.toFloat() / originalWidth
-    val ratioH = targetHeight.toFloat() / originalHeight
+    val newWidth = targetWidth.toFloat()
+    val newHeight  = targetHeight.toFloat()
+    val ratioW = newWidth/ originalWidth
+    val ratioH = newHeight / originalHeight
 
     return boundingBoxes.map { bbox ->
         BoundingBox(
-            X1 = bbox.X1 * ratioW,
-            Y1 = bbox.Y1 * ratioH,
-            X2 = bbox.X2 * ratioW,
-            Y2 = bbox.Y2 * ratioH
+            X1 = (bbox.X1 * ratioW).coerceIn(0f, newWidth),
+            Y1 = (bbox.Y1 * ratioH).coerceIn(0f, newHeight),
+            X2 = (bbox.X2 * ratioW).coerceIn(0f, newWidth),
+            Y2 = (bbox.Y2 * ratioH).coerceIn(0f, newHeight)
         )
     }
 }
