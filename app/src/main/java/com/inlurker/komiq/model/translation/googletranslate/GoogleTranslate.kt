@@ -1,5 +1,8 @@
 package com.inlurker.komiq.model.translation.googletranslate
 
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
@@ -93,9 +96,33 @@ object GoogleTranslateService {
         }
     }
 
-    private fun parseResult(json: String): String? {
-        // Assuming JSON format: [[["Translated Text","Original Text",...]],...]
-        return json.substringAfter("[[[\"").substringBefore("\"")
+    fun parseResult(json: String): String? {
+        val moshi = Moshi.Builder().build()
+
+        // We define the type as a List of Any since we know there's mixed types at the top level.
+        val type = Types.newParameterizedType(List::class.java, Any::class.java)
+        val adapter: JsonAdapter<List<Any>> = moshi.adapter(type)
+
+        try {
+            // Parse the JSON string
+            val result = adapter.fromJson(json)
+
+            // Extract the specific translated part
+            // We need to safely cast and navigate through the structure knowing that our target is deeply nested.
+            if (result != null && result.size > 0) {
+                val firstElement = result[0]
+                if (firstElement is List<*>) {
+                    val secondElement = firstElement[0]
+                    if (secondElement is List<*>) {
+                        return secondElement[0] as? String
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return null
     }
 
     private class QueuedRequest(val request: Request, val callback: (Response?) -> Unit) {
