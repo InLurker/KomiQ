@@ -28,7 +28,7 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
         isAntiAlias = true
         color = Color.BLACK
         textAlign = Paint.Align.LEFT
-        typeface = ResourcesCompat.getFont(context, R.font.wildwords)
+        typeface = ResourcesCompat.getFont(context, R.font.animeace)
     }
 
     textBoundingBoxPairs.forEach { (box, text) ->
@@ -46,7 +46,7 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
             val builder = StaticLayout.Builder.obtain(text, 0, text.length, textPaint, targetWidth)
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL)
-                .setBreakStrategy(LineBreaker.BREAK_STRATEGY_BALANCED)
+                .setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY)
 
             staticLayout = builder.build()
 
@@ -54,7 +54,7 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
             if (staticLayout.height <= targetHeight || textSize == 15f) {
                 break
             }
-            textSize--
+            textSize -= 3
         } while (textSize >= 15f)
 
         // Center the text in the bounding box taking into account the reduced target width and height

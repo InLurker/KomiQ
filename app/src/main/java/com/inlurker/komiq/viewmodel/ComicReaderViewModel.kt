@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -141,11 +142,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             return translatedPages[pageIndex]
         }
 
-
-        if (!isCraftInitialized()) {
-            craftTextDetection = CraftTextDetection(context)
-        }
-
         pagesInProcess.add(pageIndex)
 
         val comicPageFlow = getComicPage(pageIndex, context).asFlow()
@@ -174,33 +170,35 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 
         comicPageLiveData?.let { bitmap ->
             viewModelScope.launch {  // Ensure this scope runs within the suspend function
-                val translations = processAndTranslate(pageIndex, bitmap)
-
+                val translations = processAndTranslate(context, pageIndex, bitmap)
+                Log.d("TL_Task", "Translation Done")
                 // Now draw the translated text after the translations are completed
                 val translatedPage = drawTranslatedText(context, bitmap, translations)
+                Log.d("Draw_Task", "Drawing Done")
                 translatedPageLiveData.postValue(translatedPage)
             }
         }
     }
 
-    suspend fun processAndTranslate(pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>> {
-        val boundingBoxes = withContext(Dispatchers.IO) {
-            detectText(pageIndex, bitmap)  // Assuming detectText is a suspend function
+    suspend fun processAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>> {
+        val boundingBoxes = coroutineScope {
+            detectText(context, pageIndex, bitmap)  // Assuming detectText is a suspend function
         }
-        val croppedBitmaps = cropBitmaps(bitmap, boundingBoxes)
-        this.croppedBitmaps = croppedBitmaps
 
-        // Process OCR and translation in parallel and then collect results
+        croppedBitmaps = mutableListOf()
+
         return coroutineScope {
-            croppedBitmaps.mapIndexed { idx, croppedBitmap ->
+            boundingBoxes.map { boundingBox ->
                 async {
+                    val croppedBitmap = cropBitmap(bitmap, boundingBox)
+                    croppedBitmaps += croppedBitmap
                     val recognizedText = enqueueToMangaOCR(croppedBitmap, apiKey)  // Ensure enqueueToMangaOCR is a suspend function
-                    Log.d("OCR", "Recognized Text for index $idx: $recognizedText") // Logging the recognized text
+                    Log.d("OCR", "Recognized Text: $recognizedText") // Logging the recognized text
                     recognizedText?.let {
                         if (!it.hasOnlyGarbage()) {
                             val translatedText = enqueueToGoogleTranslate(it)  // Ensure enqueueToGoogleTranslate is a suspend function
-                            Log.d("GoogleTL", "Translated Text for index $idx: $translatedText") // Logging the translated text
-                            if (translatedText != null) Pair(boundingBoxes[idx], translatedText) else null
+                            Log.d("GoogleTL", "Translated Text: $translatedText") // Logging the translated text
+                            if (translatedText != null) Pair(boundingBox, translatedText) else null
                         } else null
                     }
                 }
@@ -208,7 +206,10 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
-    suspend fun detectText(index: Int, bitmap: Bitmap): List<BoundingBox> = withContext(Dispatchers.IO) {
+    suspend fun detectText(context: Context, index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
+        if (!isCraftInitialized()) {
+            craftTextDetection = CraftTextDetection(context)
+        }
         suspendCoroutine { continuation ->
             craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
                 continuation.resume(boundingBoxes)
@@ -227,19 +228,18 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             .networkCachePolicy(CachePolicy.ENABLED)
             .memoryCachePolicy(CachePolicy.ENABLED)
             .crossfade(true)
+            .target(
+                onSuccess = { result ->
+                    val bitmap = result.toBitmap()
+                    comicPages[index].postValue(bitmap)
+                },
+                onError = {
+                    Log.d("ImageRequest", "Error on retrieving index $index: ${pageUrls[index]}")
+                }
+            )
             .build()
-        val result = imageLoader.execute(imageRequest).drawable as BitmapDrawable
-        val bitmap = result.toBitmap()
 
-        comicPages[index].postValue(bitmap)
-    }
-
-    fun cropBitmaps(sourceBitmap: Bitmap, boundingBoxes: List<BoundingBox>): List<Bitmap> {
-        val croppedBitmaps = mutableListOf<Bitmap>()
-        for (box in boundingBoxes) {
-            croppedBitmaps.add(cropBitmap(sourceBitmap, box))
-        }
-        return croppedBitmaps
+        imageLoader.execute(imageRequest)
     }
 
     fun cropBitmap(sourceBitmap: Bitmap, boundingBox: BoundingBox): Bitmap {
@@ -251,15 +251,17 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         return Bitmap.createBitmap(sourceBitmap, boundingBox.X1.toInt(), boundingBox.Y1.toInt(), width, height)
     }
 
-    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String): String? = withContext(Dispatchers.IO) {
+    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String):String? = coroutineScope {
         suspendCoroutine { cont ->
             MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
-                cont.resume(result.removeSpaces())
+                val processedResult = result.removeSpaces()
+                cont.resume(processedResult)
             }
         }
     }
 
-    suspend fun enqueueToGoogleTranslate(sourceText: String):String? = withContext(Dispatchers.IO) {
+
+    suspend fun enqueueToGoogleTranslate(sourceText: String):String? = coroutineScope {
         suspendCoroutine { cont ->
             GoogleTranslateService.enqueueTranslateRequest(
                 sourceText, comicLanguage.isoCode, ComicLanguageSetting.English.isoCode
