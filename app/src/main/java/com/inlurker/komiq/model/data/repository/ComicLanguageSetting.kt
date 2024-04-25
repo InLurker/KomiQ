@@ -27,9 +27,32 @@ enum class ComicLanguageSetting(val isoCode: String, val nativeName: String, val
         fun fromIsoCode(isoCode: String): ComicLanguageSetting? {
             return values().find { it.isoCode == isoCode }
         }
+
     }
 
     fun languageDisplayName(): String {
         return "$flagEmoji $nativeName"
+    }
+
+    fun toDeepLIsoCode():String? {
+        return when (isoCode) {
+            "id" -> "ID" // Indonesian
+            "de" -> "DE" // German
+            "en" -> "EN" // English
+            "es" -> "ES" // Spanish
+            "es-la" -> "ES" // Latin American Spanish to Spanish
+            "fr" -> "FR" // French
+            "it" -> "IT" // Italian
+            "pt" -> "PT" // Portuguese
+            "pt-br" -> "PT-BR" // Brazilian Portuguese
+            "ru" -> "RU" // Russian
+            "ar" -> "AR" // Arabic
+            "hi" -> null // Hindi is not supported by DeepL
+            "zh" -> "ZH" // Chinese (Simplified)
+            "zh-hk" -> "ZH" // Traditional Chinese (Hong Kong)
+            "ja" -> "JA" // Japanese
+            "ko" -> "KO" // Korean
+            else -> null // Default case for unsupported or undefined languages
+        }
     }
 }

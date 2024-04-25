@@ -3,13 +3,11 @@ package com.inlurker.komiq.viewmodel
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -24,8 +22,12 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapte
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.model.translation.deepl.DeeplTranslateService
 import com.inlurker.komiq.model.translation.googletranslate.GoogleTranslateService
 import com.inlurker.komiq.model.translation.mangaocr.MangaOCRService
+import com.inlurker.komiq.model.translation.targetlanguages.DeepLTargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.GoogleTLTargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.TargetLanguage
 import com.inlurker.komiq.model.translation.textdetection.CraftTextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
@@ -33,12 +35,10 @@ import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
 import com.inlurker.komiq.viewmodel.utils.imageutils.drawTranslatedText
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.parsers.model.MangaSource
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -56,7 +56,8 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             sourceLanguage = comicLanguage,
             textDetection = TextDetection.CRAFT,
             textRecognition = TextRecognition.getOptionList(comicLanguage).first(),
-            translationEngine = TranslationEngine.Google
+            translationEngine = TranslationEngine.Google,
+            targetLanguage = GoogleTLTargetLanguage.English
         )
     )
 
@@ -64,13 +65,24 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         get() = _autoTranslateSettings.value
         set(value) {
             // Check if there are changes in the relevant properties
-            if (value.sourceLanguage != _autoTranslateSettings.value.sourceLanguage ||
-                value.textDetection != _autoTranslateSettings.value.textDetection ||
+            var reloadTranslatedPages = false
+
+            if (value.textDetection != _autoTranslateSettings.value.textDetection ||
                 value.textRecognition != _autoTranslateSettings.value.textRecognition ||
-                value.translationEngine != _autoTranslateSettings.value.translationEngine) {
-                resetTranslatedPagesAndProcess()
+                value.translationEngine != _autoTranslateSettings.value.translationEngine ||
+                value.targetLanguage != _autoTranslateSettings.value.targetLanguage
+            ) {
+                if (value.translationEngine != _autoTranslateSettings.value.translationEngine) {
+                    value.targetLanguage = getDefaultLanguage(value.translationEngine)
+                }
+
+                reloadTranslatedPages = true
             }
             _autoTranslateSettings.value = value
+
+            if (reloadTranslatedPages) {
+                resetTranslatedPagesAndProcess()
+            }
         }
 
 
@@ -192,12 +204,10 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
                 async {
                     val croppedBitmap = cropBitmap(bitmap, boundingBox)
                     croppedBitmaps += croppedBitmap
-                    val recognizedText = enqueueToMangaOCR(croppedBitmap, apiKey)  // Ensure enqueueToMangaOCR is a suspend function
-                    Log.d("OCR", "Recognized Text: $recognizedText") // Logging the recognized text
+                    val recognizedText = enqueueToMangaOCR(croppedBitmap, apiKey)
                     recognizedText?.let {
                         if (!it.hasOnlyGarbage()) {
-                            val translatedText = enqueueToGoogleTranslate(it)  // Ensure enqueueToGoogleTranslate is a suspend function
-                            Log.d("GoogleTL", "Translated Text: $translatedText") // Logging the translated text
+                            val translatedText = translateText(it)
                             if (translatedText != null) Pair(boundingBox, translatedText) else null
                         } else null
                     }
@@ -208,7 +218,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 
     suspend fun detectText(context: Context, index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
         if (!isCraftInitialized()) {
-            craftTextDetection = CraftTextDetection(context)
+            initializeCraft(context)
         }
         suspendCoroutine { continuation ->
             craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
@@ -251,22 +261,59 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         return Bitmap.createBitmap(sourceBitmap, boundingBox.X1.toInt(), boundingBox.Y1.toInt(), width, height)
     }
 
-    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String):String? = coroutineScope {
-        suspendCoroutine { cont ->
-            MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { result ->
-                val processedResult = result.removeSpaces()
-                cont.resume(processedResult)
-            }
+    suspend fun translateText(text: String): String? {
+        return when (autoTranslateSettings.translationEngine) {
+            TranslationEngine.Google -> enqueueToGoogleTranslate(text)
+            TranslationEngine.DeepL -> enqueueToDeepL(text)
+            else -> null
         }
+    }
+
+    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String): String? = coroutineScope {
+        var attempt = 0
+        var result: String? = null
+
+        while (attempt < 2 && result == null) {
+            suspendCoroutine { cont ->
+                MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { ocrResult ->
+                    val processedResult = ocrResult?.removeSpaces()
+                    Log.d("OCR", "Recognized Text: $ocrResult") // Logging the recognized text
+                    if (processedResult.isNullOrEmpty()) {
+                        // If result is null or empty, don't resume yet if it's the first attempt
+                        attempt++
+                        if (attempt >= 2) {
+                            cont.resume(null) // Resume with null after the second attempt
+                        }
+                    } else {
+                        cont.resume(processedResult) // Resume with the processed result
+                    }
+                }
+            }.also { result = it }
+        }
+        result
     }
 
 
     suspend fun enqueueToGoogleTranslate(sourceText: String):String? = coroutineScope {
         suspendCoroutine { cont ->
             GoogleTranslateService.enqueueTranslateRequest(
-                sourceText, comicLanguage.isoCode, ComicLanguageSetting.English.isoCode
+                sourceText, comicLanguage.isoCode, autoTranslateSettings.targetLanguage.isoCode
             ) { result ->
+                Log.d("GoogleTL", "Translated Text: $result") // Logging the translated text
                 cont.resume(result)
+            }
+        }
+    }
+
+    suspend fun enqueueToDeepL(sourceText: String):String? = coroutineScope {
+        suspendCoroutine { cont ->
+            comicLanguage.toDeepLIsoCode()?.let { sourceLanguage ->
+                DeeplTranslateService.enqueueTranslateRequest(
+                    sourceText, sourceLanguage, autoTranslateSettings.targetLanguage.isoCode
+                ) { result ->
+                    Log.d("DeepL", "Translated Text: $result") // Logging the translated text
+                    cont.resume(result)
+                }
             }
         }
     }
@@ -278,6 +325,14 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             translatedPages[i].postValue(null)  // Set to null or a default Bitmap
         }
         pagesInProcess.clear()
+    }
+
+    private fun getDefaultLanguage(translationEngine: TranslationEngine): TargetLanguage {
+        return when (translationEngine) {
+            TranslationEngine.DeepL -> DeepLTargetLanguage.English_US
+            TranslationEngine.Google -> GoogleTLTargetLanguage.English
+            else -> GoogleTLTargetLanguage.English
+        }
     }
 
     private fun String?.removeSpaces(): String? {

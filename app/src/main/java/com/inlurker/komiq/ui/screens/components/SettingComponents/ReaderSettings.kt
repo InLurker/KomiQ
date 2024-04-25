@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.translation.targetlanguages.GoogleTLTargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.getLanguageList
 import com.inlurker.komiq.ui.screens.components.SegmentedButton
 import com.inlurker.komiq.ui.screens.components.SegmentedButtonItem
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
@@ -168,43 +170,51 @@ fun ReaderSettings(
             )
         }
 
-        if(autoTranslateSettingsData.enabled) {
+        Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(8.dp))
+        TextDetectionDropdownSettings(
+            label = "Text Detection",
+            options = TextDetection.getOptionList(),
+            currentSelection = autoTranslateSettingsData.textDetection,
+            onTextDetectionSelected = { textDetection ->
+                onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(textDetection = textDetection))
+            },
+            modifier = Modifier
+                .height(42.dp)
+        )
 
-            TextDetectionDropdownSettings(
-                label = "Text Detection",
-                options = TextDetection.getOptionList(),
-                currentSelection = autoTranslateSettingsData.textDetection,
-                onTextDetectionSelected = { textDetection ->
-                    onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(textDetection = textDetection))
-                },
-                modifier = Modifier
-                    .height(42.dp)
-            )
+        TextRecognitionDropdownSettings(
+            label = "Text Recognition",
+            options = TextRecognition.getOptionList(autoTranslateSettingsData.sourceLanguage),
+            currentSelection = autoTranslateSettingsData.textRecognition,
+            onTextRecognitionSelected = { textRecognition ->
+                onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(textRecognition = textRecognition))
+            },
+            modifier = Modifier
+                .height(42.dp)
+        )
 
-            TextRecognitionDropdownSettings(
-                label = "Text Recognition",
-                options = TextRecognition.getOptionList(autoTranslateSettingsData.sourceLanguage),
-                currentSelection = autoTranslateSettingsData.textRecognition,
-                onTextRecognitionSelected = { textRecognition ->
-                    onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(textRecognition = textRecognition))
-                },
-                modifier = Modifier
-                    .height(42.dp)
-            )
+        TranslationEngineDropdownSettings(
+            label = "Translation Engine",
+            options = TranslationEngine.getOptionList(),
+            currentSelection = autoTranslateSettingsData.translationEngine,
+            onTranslationEngineSelected = { translationEngine ->
+                onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(translationEngine = translationEngine))
+            },
+            modifier = Modifier
+                .height(42.dp)
+        )
 
-            TranslationEngineDropdownSettings(
-                label = "Translation Engine",
-                options = TranslationEngine.getOptionList(),
-                currentSelection = autoTranslateSettingsData.translationEngine,
-                onTranslationEngineSelected = { translationEngine ->
-                    onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(translationEngine = translationEngine))
-                },
-                modifier = Modifier
-                    .height(42.dp)
-            )
-        }
+        TargetLanguageDropdownSettings(
+            label = "Translation Engine",
+            options = getLanguageList(autoTranslateSettingsData.targetLanguage),
+            currentSelection = autoTranslateSettingsData.targetLanguage,
+            onTargetLanguageSelected = { targetLanguage ->
+                onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(targetLanguage = targetLanguage))
+            },
+            modifier = Modifier
+                .height(42.dp)
+        )
     }
 }
 
@@ -219,7 +229,8 @@ fun ReaderSettingsPreview() {
                 sourceLanguage = ComicLanguageSetting.Japanese,
                 textDetection = TextDetection.CRAFT,
                 textRecognition = TextRecognition.MangaOCR,
-                translationEngine = TranslationEngine.Google
+                translationEngine = TranslationEngine.Google,
+                targetLanguage = GoogleTLTargetLanguage.English
             )
         )
     }

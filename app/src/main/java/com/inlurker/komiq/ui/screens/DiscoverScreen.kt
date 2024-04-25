@@ -103,7 +103,9 @@ fun DiscoverScreen(
         refreshSearchAction()
     }
 
-    var kotatsuFilterList by remember { mutableStateOf(emptyList<MangaTag>()) }
+    var kotatsuFilterList by remember {
+        mutableStateOf(listOf<MangaTag>())
+    }
     LaunchedEffect(true) {
         kotatsuFilterList = viewModel.kotatsuParser.getAvailableTags().toList()
     }
@@ -307,9 +309,9 @@ fun DiscoverScreen(
 
                     FilterSearchSetting(
                         currentComicLanguageSetting = viewModel.comicLanguageSetting,
-                        currentGenreFilter = viewModel.genreFilter,
-                        currentThemeFilter = viewModel.themeFilter,
-                        currentKotatsuTagFilter = viewModel.kotatsuTagFilter.toList(),
+                        currentGenreFilter = viewModel.genreFilter.toMutableSet(),
+                        currentThemeFilter = viewModel.themeFilter.toMutableSet(),
+                        currentKotatsuTagFilter = viewModel.kotatsuTagFilter.toMutableSet(),
                         kotatsuTagList = kotatsuFilterList
                     ) { selectedLanguage, selectedGenre, selectedTheme, selectedKotatsuTags ->
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -324,7 +326,7 @@ fun DiscoverScreen(
                         ) {
                             viewModel.comicLanguageSetting = selectedLanguage
                             if (selectedLanguage == ComicLanguageSetting.Japanese) {
-                                viewModel.kotatsuTagFilter = selectedKotatsuTags
+                                viewModel.kotatsuTagFilter = selectedKotatsuTags.toMutableSet()
                             } else {
                                 viewModel.genreFilter = selectedGenre
                                 viewModel.themeFilter = selectedTheme

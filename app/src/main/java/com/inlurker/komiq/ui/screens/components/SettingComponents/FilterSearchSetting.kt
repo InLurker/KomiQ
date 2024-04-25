@@ -31,11 +31,11 @@ import org.koitharu.kotatsu.parsers.model.MangaTag
 @Composable
 fun FilterSearchSetting(
     currentComicLanguageSetting: ComicLanguageSetting,
-    currentGenreFilter: List<GenreTag>,
-    currentThemeFilter: List<ThemeTag>,
-    currentKotatsuTagFilter: List<MangaTag>,
+    currentGenreFilter: MutableSet<GenreTag>,
+    currentThemeFilter: MutableSet<ThemeTag>,
+    currentKotatsuTagFilter: MutableSet<MangaTag>,
     kotatsuTagList: List<MangaTag>,
-    onApplySettings: (ComicLanguageSetting, List<GenreTag>, List<ThemeTag>, List<MangaTag>) -> Unit
+    onApplySettings: (ComicLanguageSetting, MutableSet<GenreTag>, MutableSet<ThemeTag>, MutableSet<MangaTag>) -> Unit
 ) {
     var tempComicLanguageSetting by remember { mutableStateOf(currentComicLanguageSetting) }
     var tempGenreFilter = currentGenreFilter
@@ -72,7 +72,7 @@ fun FilterSearchSetting(
                         tagSelection = currentKotatsuTagFilter,
                         tagList = kotatsuTagList,
                         displayOption = { it.title },
-                        onSelectionChanged = { tempKotatsuTagFilter = kotatsuTagList }
+                        onSelectionChanged = { tempKotatsuTagFilter = it }
                     )
                 }
             } else {
@@ -119,10 +119,10 @@ fun FilterSearchSetting(
 @Composable
 fun <T> TagFilterSelection(
     titleText: String,
-    tagSelection: List<T>,
+    tagSelection: MutableSet<T>,
     tagList: List<T>,
     displayOption: (T) -> String,
-    onSelectionChanged: (List<T>) -> Unit
+    onSelectionChanged: (MutableSet<T>) -> Unit
 ) {
     var tempSelectionList = tagSelection
 
@@ -148,10 +148,10 @@ fun <T> TagFilterSelection(
                     isSelected = isButtonSelected,
                     onStateChange = { isSelected ->
                         isButtonSelected = isSelected
-                        tempSelectionList = if (isSelected) {
-                            tempSelectionList.plus(tag)
+                        if (isSelected) {
+                            tempSelectionList.add(tag)
                         } else {
-                            tempSelectionList.minus(tag)
+                            tempSelectionList.remove(tag)
                         }
                         onSelectionChanged(tempSelectionList)
                     }
@@ -166,9 +166,9 @@ fun <T> TagFilterSelection(
 fun PreviewFilterSearchSetting() {
     FilterSearchSetting(
         currentComicLanguageSetting = ComicLanguageSetting.English,
-        currentGenreFilter = listOf(),
-        currentThemeFilter = listOf(),
-        currentKotatsuTagFilter = listOf(),
+        currentGenreFilter = mutableSetOf(),
+        currentThemeFilter = mutableSetOf(),
+        currentKotatsuTagFilter = mutableSetOf(),
         kotatsuTagList = listOf()
     ) { _, _, _, _ ->
 

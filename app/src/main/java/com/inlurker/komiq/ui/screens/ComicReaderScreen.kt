@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -190,7 +191,7 @@ fun ComicReaderScreen(
                                 val comicPage = viewModel.getComicPage(page, context).observeAsState()
 
                                 if (viewModel.autoTranslateSettings.enabled && pagerState.currentPage == page) {
-                                    val translatedPage = viewModel.getTranslatedPage(page, context).observeAsState()
+                                    val translatedPage = viewModel.translatedPages[page].observeAsState()
 
                                     if (translatedPage.value != null) {
                                         Column {
@@ -211,6 +212,7 @@ fun ComicReaderScreen(
                                             }
                                         }
                                     } else {
+                                        viewModel.getTranslatedPage(page, context)
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxSize(),
@@ -318,6 +320,12 @@ fun ComicReaderScreen(
                         .align(Alignment.BottomCenter)
                 )
             }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.endCraft()  // Call endCraft when the composable is disposed
         }
     }
 }

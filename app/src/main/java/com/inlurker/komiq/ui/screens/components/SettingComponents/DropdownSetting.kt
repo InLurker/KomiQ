@@ -3,6 +3,7 @@ package com.inlurker.komiq.ui.screens.components.SettingComponents
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
@@ -21,8 +22,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.translation.targetlanguages.TargetLanguage
 import com.inlurker.komiq.ui.screens.components.AnimatedComponents.RotatingIcon
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReaderBackground
 import com.inlurker.komiq.ui.screens.helper.Enumerated.ReadingDirection
@@ -73,6 +76,7 @@ fun <T> SettingsDropdown(
             onDismissRequest = { dropdownExpanded = false },
             modifier = dropdownModifier
                 .width(with(LocalDensity.current) { rowSize.width.toDp() })
+                .requiredSizeIn(maxHeight = 300.dp)
         ) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(
@@ -208,3 +212,22 @@ fun TranslationEngineDropdownSettings(
     )
 }
 
+@Composable
+fun TargetLanguageDropdownSettings(
+    label: String,
+    options: List<TargetLanguage>,
+    currentSelection: TargetLanguage,
+    modifier: Modifier = Modifier,
+    dropdownModifier: Modifier = Modifier,
+    onTargetLanguageSelected: (TargetLanguage) -> Unit
+) {
+    SettingsDropdown(
+        label = label,
+        options = options,
+        currentSelection = currentSelection,
+        displayOption = { it.languageName },
+        modifier = modifier,
+        dropdownModifier = dropdownModifier,
+        onOptionSelected = { index -> onTargetLanguageSelected(options[index]) }
+    )
+}

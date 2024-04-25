@@ -36,8 +36,8 @@ class DiscoverViewModel : ViewModel() {
     var sortingOrder by mutableStateOf(SortingOrder.DESC)
     val comicAmount = 30
     var comicLanguageSetting by mutableStateOf(ComicLanguageSetting.English)
-    var genreFilter by mutableStateOf(emptyList<GenreTag>())
-    var themeFilter by mutableStateOf(emptyList<ThemeTag>())
+    var genreFilter = mutableSetOf<GenreTag>()
+    var themeFilter = mutableSetOf<ThemeTag>()
 
 
     var listState by mutableStateOf(ListState.IDLE)
@@ -57,7 +57,7 @@ class DiscoverViewModel : ViewModel() {
     lateinit var kotatsuParser: PagedMangaParser
 
     var kotatsuSortingMethod by mutableStateOf(SortOrder.POPULARITY)
-    var kotatsuTagFilter by mutableStateOf(emptyList<MangaTag>())
+    var kotatsuTagFilter = mutableSetOf<MangaTag>()
 
 
     @OptIn(InternalParsersApi::class)
