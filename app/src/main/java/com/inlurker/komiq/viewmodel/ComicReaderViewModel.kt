@@ -16,18 +16,21 @@ import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.inlurker.komiq.BuildConfig
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapter
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.model.ocr.mangaocr.MangaOCRService
+import com.inlurker.komiq.model.translation.caiyun.CaiyunTranslateService
 import com.inlurker.komiq.model.translation.deepl.DeeplTranslateService
 import com.inlurker.komiq.model.translation.googletranslate.GoogleTranslateService
-import com.inlurker.komiq.model.ocr.mangaocr.MangaOCRService
 import com.inlurker.komiq.model.translation.targetlanguages.DeepLTargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.GoogleTLTargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.TargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunENTargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunJATargetLanguage
+import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunZHTargetLanguage
 import com.inlurker.komiq.model.translation.textdetection.CraftTextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
@@ -44,8 +47,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class ComicReaderViewModel(application: Application): AndroidViewModel(application) {
-    private val apiKey = BuildConfig.HUGGINGFACE_API_TOKEN  // Use your actual Hugging Face API key
-
     var chapter by mutableStateOf(ComicRepository.currentChapter)
 
     val comicLanguage = ComicRepository.currentComic.languageSetting
@@ -184,8 +185,11 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             viewModelScope.launch {  // Ensure this scope runs within the suspend function
                 val translations = processAndTranslate(context, pageIndex, bitmap)
                 Log.d("TL_Task", "Translation Done")
-                // Now draw the translated text after the translations are completed
-                val translatedPage = drawTranslatedText(context, bitmap, translations)
+                val translatedPage = if (translations.isNotEmpty()) {
+                    drawTranslatedText(context, bitmap, translations)
+                } else {
+                    comicPageLiveData
+                }
                 Log.d("Draw_Task", "Drawing Done")
                 translatedPageLiveData.postValue(translatedPage)
             }
@@ -204,7 +208,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
                 async {
                     val croppedBitmap = cropBitmap(bitmap, boundingBox)
                     croppedBitmaps += croppedBitmap
-                    val recognizedText = enqueueToMangaOCR(croppedBitmap, apiKey)
+                    val recognizedText = enqueueToMangaOCR(croppedBitmap)
                     recognizedText?.let {
                         if (!it.hasOnlyGarbage()) {
                             val translatedText = translateText(it)
@@ -265,32 +269,19 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         return when (autoTranslateSettings.translationEngine) {
             TranslationEngine.Google -> enqueueToGoogleTranslate(text)
             TranslationEngine.DeepL -> enqueueToDeepL(text)
+            TranslationEngine.Caiyun -> enqueueToCaiyun(text)
             else -> null
         }
     }
 
-    suspend fun enqueueToMangaOCR(bitmap: Bitmap, apiKey: String): String? = coroutineScope {
-        var attempt = 0
-        var result: String? = null
-
-        while (attempt < 2 && result == null) {
-            suspendCoroutine { cont ->
-                MangaOCRService.enqueueOCRRequest(bitmap, apiKey) { ocrResult ->
-                    val processedResult = ocrResult?.removeSpaces()
-                    Log.d("OCR", "Recognized Text: $ocrResult") // Logging the recognized text
-                    if (processedResult.isNullOrEmpty()) {
-                        // If result is null or empty, don't resume yet if it's the first attempt
-                        attempt++
-                        if (attempt >= 2) {
-                            cont.resume(null) // Resume with null after the second attempt
-                        }
-                    } else {
-                        cont.resume(processedResult) // Resume with the processed result
-                    }
-                }
-            }.also { result = it }
+    suspend fun enqueueToMangaOCR(bitmap: Bitmap): String? = coroutineScope {
+        suspendCoroutine { cont ->
+            MangaOCRService.enqueueOCRRequest(bitmap) { ocrResult ->
+                val processedResult = ocrResult?.removeSpaces()
+                Log.d("OCR", "Recognized Text: $processedResult") // Logging the recognized text
+                cont.resume(processedResult) // Resume with null after the second attempt
+            }
         }
-        result
     }
 
 
@@ -318,6 +309,17 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
+    suspend fun enqueueToCaiyun(sourceText: String):String? = coroutineScope {
+        suspendCoroutine { cont ->
+            CaiyunTranslateService.enqueueTranslateRequest(
+                sourceText, autoTranslateSettings.targetLanguage.isoCode
+            ) { result ->
+                Log.d("Caiyun", "Translated Text: $result") // Logging the translated text
+                cont.resume(result)
+            }
+        }
+    }
+
     fun isCraftInitialized() = ::craftTextDetection.isInitialized
 
     private fun resetTranslatedPagesAndProcess() {
@@ -331,6 +333,14 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         return when (translationEngine) {
             TranslationEngine.DeepL -> DeepLTargetLanguage.English_US
             TranslationEngine.Google -> GoogleTLTargetLanguage.English
+            TranslationEngine.Caiyun -> {
+                when (comicLanguage) {
+                    ComicLanguageSetting.English -> CaiyunENTargetLanguage.Chinese
+                    ComicLanguageSetting.Chinese -> CaiyunZHTargetLanguage.English
+                    ComicLanguageSetting.Japanese -> CaiyunJATargetLanguage.Chinese
+                    else -> CaiyunENTargetLanguage.Chinese
+                }
+            }
             else -> GoogleTLTargetLanguage.English
         }
     }
@@ -343,6 +353,12 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         // This regex checks if the string does not contain any Unicode letter or number.
         // `\\p{L}` matches any letter from any language, and `\\p{N}` matches any numeric digit.
         return !this.any { it.toString().matches(Regex("[\\p{L}\\p{N}]")) }
+    }
+
+    fun disposeCraft() {
+        if (isCraftInitialized()) {
+            endCraft()  // Call endCraft when the composable is disposed
+        }
     }
 }
 

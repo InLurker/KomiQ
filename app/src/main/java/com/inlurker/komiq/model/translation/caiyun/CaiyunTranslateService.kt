@@ -1,45 +1,43 @@
-package com.inlurker.komiq.model.translation.googletranslate
+package com.inlurker.komiq.model.translation.caiyun
 
+import com.inlurker.komiq.BuildConfig
 import com.inlurker.komiq.model.translation.helper.QueuedRequest
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.HttpUrl
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.IOException
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
-object GoogleTranslateService {
+object CaiyunTranslateService {
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.SECONDS)
         .writeTimeout(5, TimeUnit.SECONDS)
         .build()
 
+    val apiKey = BuildConfig.CAIYUN_API_TOKEN
+
     private val requestQueue: MutableList<QueuedRequest> = mutableListOf()
 
-    fun enqueueTranslateRequest(text: String, sourceLang: String, targetLang: String, callback: (String?) -> Unit) {
+    fun enqueueTranslateRequest(text: String, transType: String, callback: (String?) -> Unit) {
         synchronized(requestQueue) {
-            val url = HttpUrl.Builder()
-                .scheme("https")
-                .host("translate.googleapis.com")
-                .addPathSegment("translate_a")
-                .addPathSegment("single")
-                .addQueryParameter("client", "gtx")
-                .addQueryParameter("sl", sourceLang)
-                .addQueryParameter("tl", targetLang)
-                .addQueryParameter("dt", "t")
-                .addQueryParameter("q", text)
-                .build()
-
+            val requestBody = buildRequestBody(text, transType)
             val request = Request.Builder()
-                .url(url)
-                .get()
+                .url("https://api.interpreter.caiyunai.com/v1/translator")
+                .post(requestBody)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("x-authorization", "token $apiKey")
                 .build()
 
             val queuedRequest = QueuedRequest(request) { response ->
@@ -49,6 +47,16 @@ object GoogleTranslateService {
             requestQueue.add(queuedRequest)
             processRequestQueue()
         }
+    }
+
+    private fun buildRequestBody(text: String, transType: String): RequestBody {
+        val json = JSONObject().apply {
+            put("source", JSONArray().put(text))
+            put("trans_type", transType)
+            put("request_id", "demo")
+            put("detect", true)
+        }
+        return json.toString().toRequestBody("application/json".toMediaTypeOrNull())
     }
 
     private fun processRequestQueue() {
@@ -64,7 +72,6 @@ object GoogleTranslateService {
     }
 
     private fun sendRequest(queuedRequest: QueuedRequest) {
-        // Random delay between 25ms to 300ms
         val delay = Random.nextLong(25, 301)
         Thread.sleep(delay)
 
@@ -97,32 +104,22 @@ object GoogleTranslateService {
         }
     }
 
-    fun parseResult(json: String): String? {
-        val moshi = Moshi.Builder().build()
+    private fun parseResult(json: String?): String? {
+        if (json == null) return null
 
-        // We define the type as a List of Any since we know there's mixed types at the top level.
-        val type = Types.newParameterizedType(List::class.java, Any::class.java)
-        val adapter: JsonAdapter<List<Any>> = moshi.adapter(type)
+        val moshi = Moshi.Builder().build()
+        val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
+        val adapter: JsonAdapter<Map<String, Any>> = moshi.adapter(type)
 
         try {
-            // Parse the JSON string
             val result = adapter.fromJson(json)
-
-            // Extract the specific translated part
-            // We need to safely cast and navigate through the structure knowing that our target is deeply nested.
-            if (result != null && result.size > 0) {
-                val firstElement = result[0]
-                if (firstElement is List<*>) {
-                    val secondElement = firstElement[0]
-                    if (secondElement is List<*>) {
-                        return secondElement[0] as? String
-                    }
-                }
+            if (result != null && result.containsKey("target")) {
+                val translations = result["target"] as? List<*>
+                return translations?.firstOrNull()?.toString()
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
         return null
     }
 }
@@ -130,7 +127,13 @@ object GoogleTranslateService {
 /*
 Example request
 
-curl "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=Hello%20World"
+curl -X POST http://api.interpreter.caiyunai.com/v1/translator \
+-H "Content-Type: application/json" \
+-H "x-authorization: token YOUR_TOKEN" \
+-d '{"source": ["Lingocloud is the best translation service."], "trans_type": "auto2zh", "request_id": "demo", "detect": true}'
 
-[[["Hola Mundo","Hello World",null,null,10]],null,"en",null,null,null,null,[]]
+Response
+
+{"target":["\u5f69\u4e91\u5c0f\u8bd1\u662f\u6700\u597d\u7684\u7ffb\u8bd1\u670d\u52a1\u3002"],"rc":0,"confidence":0.8,"trans_type":"ja2zh"}
+
  */

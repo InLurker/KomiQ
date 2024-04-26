@@ -21,6 +21,7 @@ android {
         Properties properties = new Properties()
         properties.load(project.rootProject.file("tokens.properties").newDataInputStream())
         buildConfigField "String", "HUGGINGFACE_API_TOKEN", "\"${properties.getProperty("HUGGINGFACE_API_TOKEN")}\""
+        buildConfigField "String", "CAIYUN_API_TOKEN", "\"${properties.getProperty("CAIYUN_API_TOKEN")}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

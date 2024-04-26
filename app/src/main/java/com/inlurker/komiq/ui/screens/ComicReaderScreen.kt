@@ -325,7 +325,7 @@ fun ComicReaderScreen(
 
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.endCraft()  // Call endCraft when the composable is disposed
+            viewModel.disposeCraft()
         }
     }
 }

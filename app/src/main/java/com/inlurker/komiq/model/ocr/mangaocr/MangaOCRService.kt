@@ -3,6 +3,7 @@ package com.inlurker.komiq.model.ocr.mangaocr
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.inlurker.komiq.BuildConfig
 import com.inlurker.komiq.model.ocr.helper.bitmapToRequestBody
 import com.squareup.moshi.JsonReader
 import okhttp3.Call
@@ -21,7 +22,9 @@ object MangaOCRService {
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    fun enqueueOCRRequest(bitmap: Bitmap, apiKey: String, callback: (String?) -> Unit) {
+    val apiKey = BuildConfig.HUGGINGFACE_API_TOKEN
+
+    fun enqueueOCRRequest(bitmap: Bitmap, callback: (String?) -> Unit) {
         val requestBody = bitmapToRequestBody(bitmap)
         val request = Request.Builder()
             .url("https://api-inference.huggingface.co/models/kha-white/manga-ocr-base")
@@ -92,5 +95,9 @@ curl -X POST https://api-inference.huggingface.co/models/kha-white/manga-ocr-bas
 -H "Authorization: Bearer YOUR_API_KEY" \
 -H "Content-Type: application/octet-stream" \
 --data-binary @sample.png
+
+Response
+
+[{"generated_text":"清 臨 学 園 の 生 徒 の 鑑 だ わ!!"}]
 
  */
