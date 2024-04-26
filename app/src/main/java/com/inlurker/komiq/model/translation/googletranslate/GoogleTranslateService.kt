@@ -129,3 +129,9 @@ object GoogleTranslateService {
         var isRunning: Boolean = false
     }
 }
+
+/*
+Example request
+
+curl "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=Hello%20World"
+ */

@@ -24,7 +24,7 @@ import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
 import com.inlurker.komiq.model.translation.deepl.DeeplTranslateService
 import com.inlurker.komiq.model.translation.googletranslate.GoogleTranslateService
-import com.inlurker.komiq.model.translation.mangaocr.MangaOCRService
+import com.inlurker.komiq.model.ocr.mangaocr.MangaOCRService
 import com.inlurker.komiq.model.translation.targetlanguages.DeepLTargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.GoogleTLTargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.TargetLanguage

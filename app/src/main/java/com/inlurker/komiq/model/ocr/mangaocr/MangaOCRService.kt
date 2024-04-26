@@ -1,17 +1,14 @@
-package com.inlurker.komiq.model.translation.mangaocr
+package com.inlurker.komiq.model.ocr.mangaocr
 
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.inlurker.komiq.viewmodel.utils.bitmapToByteArray
+import com.inlurker.komiq.model.ocr.helper.bitmapToRequestBody
 import com.squareup.moshi.JsonReader
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.Buffer
 import java.io.IOException
@@ -62,11 +59,6 @@ object MangaOCRService {
         })
     }
 
-    private fun bitmapToRequestBody(bitmap: Bitmap): RequestBody {
-        val byteArray = bitmapToByteArray(bitmap)
-        return byteArray.toRequestBody("application/octet-stream".toMediaTypeOrNull())
-    }
-
     private fun parseResult(json: String): String? {
         val buffer = Buffer().writeUtf8(json)
         val reader = JsonReader.of(buffer)
@@ -91,3 +83,14 @@ object MangaOCRService {
         return result
     }
 }
+
+
+/*
+Sample Request
+
+curl -X POST https://api-inference.huggingface.co/models/kha-white/manga-ocr-base \
+-H "Authorization: Bearer YOUR_API_KEY" \
+-H "Content-Type: application/octet-stream" \
+--data-binary @sample.png
+
+ */

@@ -139,6 +139,7 @@ chaquopy {
             install("opencv-python")
             install("numpy")
             install("tflite-runtime")
+            install("gradio_client")
         }
     }
     productFlavors { }
