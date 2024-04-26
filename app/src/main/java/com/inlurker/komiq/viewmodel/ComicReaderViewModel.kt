@@ -55,7 +55,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         AutomaticTranslationSettingsData(
             enabled = false,
             sourceLanguage = comicLanguage,
-            textDetection = TextDetection.CRAFT,
+            textDetection = TextDetection.getOptionList(comicLanguage).first(),
             textRecognition = TextRecognition.getOptionList(comicLanguage).first(),
             translationEngine = TranslationEngine.Google,
             targetLanguage = GoogleTLTargetLanguage.English
@@ -331,7 +331,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 
     private fun getDefaultLanguage(translationEngine: TranslationEngine): TargetLanguage {
         return when (translationEngine) {
-            TranslationEngine.DeepL -> DeepLTargetLanguage.English_US
+            TranslationEngine.DeepL -> DeepLTargetLanguage.English
             TranslationEngine.Google -> GoogleTLTargetLanguage.English
             TranslationEngine.Caiyun -> {
                 when (comicLanguage) {

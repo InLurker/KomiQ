@@ -29,7 +29,12 @@ object DeeplTranslateService {
 
     fun enqueueTranslateRequest(text: String, sourceLang: String, targetLang: String, callback: (String?) -> Unit) {
         val translationRequest = TranslationRequest(text, sourceLang, targetLang)
-        val requestBody = jsonAdapter.toJson(translationRequest).toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        val jsonRequestBody = jsonAdapter.toJson(translationRequest)
+
+        // Log the JSON request body
+        println("JSON request: $jsonRequestBody")
+
+        val requestBody = jsonRequestBody.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
         val request = Request.Builder()
             .url("https://api.deeplx.org/translate")
@@ -39,6 +44,8 @@ object DeeplTranslateService {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
+                // Log the error
+                println("Request failed: ${e.message}")
                 callback(null)
             }
 
@@ -51,9 +58,28 @@ object DeeplTranslateService {
                         callback(textData)
                     }
                 } else {
+                    // Log error details
+                    println("Request error: ${response.code}")
                     callback(null)
                 }
             }
         })
     }
 }
+
+/*
+
+Sample Request
+
+curl -X POST "https://api.deeplx.org/translate" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "text": "Your text to translate",
+        "source_lang": "EN",
+        "target_lang": "DE"
+    }'
+
+ Response
+ {"code":200,"id":8047870002,"data":"Ihr zu übersetzender Text","alternatives":[]}
+
+ */

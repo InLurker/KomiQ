@@ -174,7 +174,7 @@ fun ReaderSettings(
 
         TextDetectionDropdownSettings(
             label = "Text Detection",
-            options = TextDetection.getOptionList(),
+            options = TextDetection.getOptionList(autoTranslateSettingsData.sourceLanguage),
             currentSelection = autoTranslateSettingsData.textDetection,
             onTextDetectionSelected = { textDetection ->
                 onAutoTranslateSettingsChanged(autoTranslateSettingsData.copy(textDetection = textDetection))
@@ -206,7 +206,7 @@ fun ReaderSettings(
         )
 
         TargetLanguageDropdownSettings(
-            label = "Translation Engine",
+            label = "Target Language",
             options = getLanguageList(autoTranslateSettingsData.targetLanguage),
             currentSelection = autoTranslateSettingsData.targetLanguage,
             onTargetLanguageSelected = { targetLanguage ->
