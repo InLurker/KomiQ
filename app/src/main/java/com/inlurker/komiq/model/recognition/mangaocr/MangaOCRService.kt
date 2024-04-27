@@ -1,10 +1,10 @@
-package com.inlurker.komiq.model.ocr.mangaocr
+package com.inlurker.komiq.model.recognition.mangaocr
 
 
 import android.graphics.Bitmap
 import android.util.Log
 import com.inlurker.komiq.BuildConfig
-import com.inlurker.komiq.model.ocr.helper.bitmapToRequestBody
+import com.inlurker.komiq.model.recognition.helper.bitmapToRequestBody
 import com.squareup.moshi.JsonReader
 import okhttp3.Call
 import okhttp3.Callback

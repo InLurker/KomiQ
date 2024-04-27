@@ -1,4 +1,4 @@
-package com.inlurker.komiq.model.ocr.helper
+package com.inlurker.komiq.model.recognition.helper
 
 import android.graphics.Bitmap
 import com.inlurker.komiq.viewmodel.utils.bitmapToByteArray

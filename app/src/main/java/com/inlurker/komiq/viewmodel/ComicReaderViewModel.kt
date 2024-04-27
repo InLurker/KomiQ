@@ -1,5 +1,6 @@
 package com.inlurker.komiq.viewmodel
 
+import PaddleOCRService
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
@@ -21,7 +22,7 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapte
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
-import com.inlurker.komiq.model.ocr.mangaocr.MangaOCRService
+import com.inlurker.komiq.model.recognition.mangaocr.MangaOCRService
 import com.inlurker.komiq.model.translation.caiyun.CaiyunTranslateService
 import com.inlurker.komiq.model.translation.deepl.DeeplTranslateService
 import com.inlurker.komiq.model.translation.googletranslate.GoogleTranslateService
@@ -37,6 +38,7 @@ import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
+import com.inlurker.komiq.viewmodel.utils.imageutils.drawBoundingBoxes
 import com.inlurker.komiq.viewmodel.utils.imageutils.drawTranslatedText
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -100,6 +102,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     var croppedBitmaps by mutableStateOf(listOf<Bitmap>())
 
     lateinit var craftTextDetection: CraftTextDetection
+    lateinit var paddleOCR: PaddleOCRService
     lateinit var imageLoader: ImageLoader
 
     init {
@@ -133,6 +136,10 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         craftTextDetection = CraftTextDetection(context)
     }
 
+    fun initializePadleOCR(context: Context) {
+        paddleOCR = PaddleOCRService(context)
+    }
+
     fun endCraft() {
         craftTextDetection.endInference()
     }
@@ -162,7 +169,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         // Launch a coroutine to wait for the comic page to be non-null and then proceed with translation
         viewModelScope.launch {
             comicPageFlow.collect { _ ->
-                // At this point, bitmap is not null. Now, trigger the translation.
                 translatePage(pageIndex, context)
             }
         }
@@ -185,7 +191,16 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             viewModelScope.launch {  // Ensure this scope runs within the suspend function
                 val translations = processAndTranslate(context, pageIndex, bitmap)
                 Log.d("TL_Task", "Translation Done")
-                val translatedPage = if (translations.isNotEmpty()) {
+                val translatedPage = if (!translations.isNullOrEmpty()) {
+
+//                    Draw Bounding Box
+
+//                    val boxes = translations.map { it.first }
+//                    boxes.forEach {
+//                        Log.d("Box", it.toString())
+//                    }
+//                    drawBoundingBoxes(bitmap, boxes)
+
                     drawTranslatedText(context, bitmap, translations)
                 } else {
                     comicPageLiveData
@@ -196,34 +211,80 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
-    suspend fun processAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>> {
-        val boundingBoxes = coroutineScope {
-            detectText(context, pageIndex, bitmap)  // Assuming detectText is a suspend function
-        }
-
-        croppedBitmaps = mutableListOf()
-
-        return coroutineScope {
-            boundingBoxes.map { boundingBox ->
-                async {
-                    val croppedBitmap = cropBitmap(bitmap, boundingBox)
-                    croppedBitmaps += croppedBitmap
-                    val recognizedText = enqueueToMangaOCR(croppedBitmap)
-                    recognizedText?.let {
-                        if (!it.hasOnlyGarbage()) {
-                            val translatedText = translateText(it)
-                            if (translatedText != null) Pair(boundingBox, translatedText) else null
-                        } else null
-                    }
-                }
-            }.awaitAll().filterNotNull()
+    suspend fun processAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>>? {
+        return if (autoTranslateSettings.textRecognition.description == autoTranslateSettings.textDetection.description) {
+            recognizeAndTranslate(context, bitmap, autoTranslateSettings.textDetection)
+        } else {
+            detectRecognizeAndTranslate(context, pageIndex, bitmap, autoTranslateSettings.textDetection)
         }
     }
 
-    suspend fun detectText(context: Context, index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
-        if (!isCraftInitialized()) {
-            initializeCraft(context)
+    suspend fun recognizeAndTranslate(context: Context, bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
+        when (textDetection) {
+            TextDetection.PADDLEOCR -> {
+                if (!isPaddleOCRInitialized()) {
+                    initializePadleOCR(context)
+                }
+
+                val detectedBoundingBoxes = enqueueToPaddleTextDetection(bitmap, comicLanguage)
+                detectedBoundingBoxes.map { boundingBox ->
+                    async {
+                        processTextAndTranslate(
+                            bitmap,
+                            boundingBox.first,
+                            { b, _ -> boundingBox.second },
+                            ::translateText
+                        )
+                    }
+                }.awaitAll().filterNotNull()
+            }
+            TextDetection.MLKit -> listOf()
+            else -> null
         }
+    }
+
+    suspend fun detectRecognizeAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
+        val detectedBoundingBoxes = when (textDetection) {
+            TextDetection.CRAFT -> {
+                if (!isCraftInitialized()) {
+                    initializeCraft(context)
+                }
+                enqueueToCRAFT(context, pageIndex, bitmap)
+            }
+            TextDetection.PADDLEOCR -> {
+                if (!isPaddleOCRInitialized()) {
+                    initializePadleOCR(context)
+                }
+                enqueueToPaddleTextDetection(bitmap, comicLanguage).map { it.first }
+            }
+            else -> listOf()  // Consider handling MLKit or other models similarly
+        }
+        detectedBoundingBoxes.map { boundingBox ->
+            async {
+                val croppedBitmap = cropBitmap(bitmap, boundingBox)
+                val text = enqueueToMangaOCR(croppedBitmap)
+                text?.let { recognizedText ->
+                    if (!recognizedText.hasOnlyGarbage()) {
+                        translateText(recognizedText)?.let { translatedText ->
+                            Pair(boundingBox, translatedText)
+                        }
+                    } else null
+                }
+            }
+        }.awaitAll().filterNotNull()
+    }
+
+    suspend fun processTextAndTranslate(bitmap: Bitmap, boundingBox: BoundingBox, cropAndRecognize: suspend (Bitmap, BoundingBox) -> String?, translate: suspend (String) -> String?): Pair<BoundingBox, String>? {
+        val croppedBitmap = cropBitmap(bitmap, boundingBox)
+        val recognizedText = cropAndRecognize(croppedBitmap, boundingBox) ?: return null
+        return if (!recognizedText.hasOnlyGarbage()) {
+            translate(recognizedText)?.let { translated ->
+                Pair(boundingBox, translated)
+            }
+        } else null
+    }
+
+    suspend fun enqueueToCRAFT(context: Context, index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
         suspendCoroutine { continuation ->
             craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
                 continuation.resume(boundingBoxes)
@@ -284,6 +345,38 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
+    suspend fun enqueueToPaddleTextDetection(bitmap: Bitmap, comicLanguage: ComicLanguageSetting): List<Pair<BoundingBox, String>> = coroutineScope {
+        suspendCoroutine { cont ->
+            paddleOCR.enqueuePaddleTextDetection(bitmap, comicLanguage.toPaddleOCRType()) { result ->
+                result?.let { boundingBoxWithText ->
+                    if (comicLanguage == ComicLanguageSetting.Japanese || comicLanguage == ComicLanguageSetting.Chinese) {
+                        val processedResult = boundingBoxWithText.map { Pair(it.first, it.second.removeSpaces()) }
+                        Log.d("PaddleOCR_Recog", "Recognized Text: $processedResult") // Logging the recognized text
+                        cont.resume(processedResult)
+                    } else {
+                        cont.resume(boundingBoxWithText)
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun enqueueToPaddleTextRecognition(bitmap: Bitmap, comicLanguage: ComicLanguageSetting): String? = coroutineScope {
+        suspendCoroutine { cont ->
+            paddleOCR.enqueuePaddleTextRecognition(bitmap, comicLanguage.toPaddleOCRType()) { recognizedText ->
+                if (comicLanguage == ComicLanguageSetting.Japanese || comicLanguage == ComicLanguageSetting.Chinese) {
+                    val processedResult = recognizedText?.removeSpaces()
+                    Log.d("PaddleOCR_Recog", "Recognized Text: $processedResult") // Logging the recognized text
+                    cont.resume(processedResult)
+                } else {
+                    cont.resume(recognizedText)
+                }
+            }
+        }
+    }
+
+
+
 
     suspend fun enqueueToGoogleTranslate(sourceText: String):String? = coroutineScope {
         suspendCoroutine { cont ->
@@ -321,6 +414,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     }
 
     fun isCraftInitialized() = ::craftTextDetection.isInitialized
+    fun isPaddleOCRInitialized() = ::paddleOCR.isInitialized
 
     private fun resetTranslatedPagesAndProcess() {
         for(i in translatedPages.indices) {
@@ -345,8 +439,8 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
-    private fun String?.removeSpaces(): String? {
-        return this?.replace(" ", "")
+    private fun String.removeSpaces(): String {
+        return this.replace(" ", "")
     }
 
     private fun String.hasOnlyGarbage(): Boolean {

@@ -35,20 +35,33 @@ enum class ComicLanguageSetting(val isoCode: String, val nativeName: String, val
     }
 
     fun toDeepLIsoCode():String? {
-        return when (isoCode) {
-            "id" -> "ID" // Indonesian
-            "de" -> "DE" // German
-            "en" -> "EN" // English
-            "es", "es-la" -> "ES" // Spanish
-            "fr" -> "FR" // French
-            "it" -> "IT" // Italian
-            "pt", "pt-br" -> "PT" // Portuguese
-            "ru" -> "RU" // Russian
-            "ar" -> "AR" // Arabic
-            "zh", "zh-hk" -> "ZH" // Chinese
-            "ja" -> "JA" // Japanese
-            "ko" -> "KO" // Korean
+        return when (this) {
+            Indonesian -> "ID" // Indonesian
+            German -> "DE" // German
+            English -> "EN" // English
+            Spanish, LatinAmericanSpanish -> "ES" // Spanish
+            French -> "FR" // French
+            Italian -> "IT" // Italian
+            Portuguese, BrazilianPortuguese -> "PT" // Portuguese
+            Russian -> "RU" // Russian
+            Arabic -> "AR" // Arabic
+            Chinese, TraditionalChinese -> "ZH" // Chinese
+            Japanese -> "JA" // Japanese
+            Korean -> "KO" // Korean
             else -> null // Default case for unsupported or undefined languages
+        }
+    }
+
+    fun toPaddleOCRType():String? {
+        return when (this) {
+            Arabic -> "ar"
+            English -> "en"
+            Chinese, TraditionalChinese -> "ch"
+            French -> "fr"
+            German -> "german"
+            Japanese -> "japan"
+            Korean -> "korean"
+            else -> null
         }
     }
 }
