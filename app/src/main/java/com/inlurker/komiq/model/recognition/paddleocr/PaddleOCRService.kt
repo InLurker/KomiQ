@@ -1,42 +1,26 @@
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import android.util.Log
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.inlurker.komiq.R
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import okhttp3.internal.notify
+import okhttp3.internal.wait
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.BlockingQueue
+import java.util.Collections
+import java.util.LinkedList
 
 class PaddleOCRService(private val context: Context) {
     private val pythonInstance: Python
     private val module: PyObject
-    private val ocrQueue: BlockingQueue<OCRJob> = ArrayBlockingQueue(10 ) // Queue with a fixed capacity
+    private val ocrQueue: MutableList<OCRJob>
 
     private data class OCRJob(
         val bitmap: Bitmap,
@@ -63,26 +47,9 @@ class PaddleOCRService(private val context: Context) {
         }
         pythonInstance = Python.getInstance()
         module = pythonInstance.getModule("paddle_ocr")
+        ocrQueue = Collections.synchronizedList(LinkedList())
 
-        CoroutineScope(Dispatchers.IO).launch {
-            while (isActive) {  // isActive is a coroutine property that checks if the coroutine is still active
-                try {
-                    withContext(Dispatchers.IO) {
-                        val job = ocrQueue.take()
-                        if (job.isRecognition) {
-                            processRecognition(job)
-                        } else {
-                            processDetection(job)
-                        }
-                    }
-                } catch (e: Exception) {
-                    if (e is InterruptedException) {
-                        break // Exit the loop if the coroutine is interrupted
-                    }
-                    // Log or handle other exceptions
-                }
-            }
-        }
+        startJobProcessor()
     }
 
     fun enqueuePaddleTextDetection(bitmap: Bitmap, language: String?, callback: (List<Pair<BoundingBox, String>>?) -> Unit) {
@@ -91,24 +58,69 @@ class PaddleOCRService(private val context: Context) {
                 @Suppress("UNCHECKED_CAST")
                 callback(result as List<Pair<BoundingBox, String>>?)
             } else {
-                // Handle the case where the result is not of the expected type
                 callback(null)
             }
         }
-        ocrQueue.put(OCRJob(bitmap, language, genericCallback, isRecognition = false))
+        synchronized(ocrQueue) {
+            ocrQueue.add(OCRJob(bitmap, language, genericCallback, isRecognition = false))
+            (ocrQueue as Any).notify()  // Notify any waiting threads that an item has been added
+        }
     }
 
     fun enqueuePaddleTextRecognition(bitmap: Bitmap, language: String?, callback: (String?) -> Unit) {
         val genericCallback: (Any?) -> Unit = { result ->
             callback(result as String?)
         }
-        ocrQueue.put(OCRJob(bitmap, language, genericCallback, isRecognition = true))
+        synchronized(ocrQueue) {
+            ocrQueue.add(OCRJob(bitmap, language, genericCallback, isRecognition = true))
+            (ocrQueue as Any).notify()  // Notify any waiting threads that an item has been added
+        }
+    }
+
+    private fun startJobProcessor() {
+        CoroutineScope(Dispatchers.IO).launch {
+            while (isActive) {
+                // Get the next job in a synchronized manner
+                val job = getNextJob()
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        if (job.isRecognition) {
+                            processRecognition(job)
+                        } else {
+                            processDetection(job)
+                        }
+                    } catch (e: Exception) {
+                        Log.d("PaddleOCR Error", "Error processing OCR job: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getNextJob(): OCRJob {
+        synchronized(ocrQueue) {
+            while (ocrQueue.isEmpty()) {
+                (ocrQueue as Any).wait()  // Wait until there is an item in the queue
+            }
+            return ocrQueue.removeAt(0).also {
+                if (ocrQueue.isNotEmpty()) {
+                    (ocrQueue as Any).notify()  // Notify possibly waiting threads that the queue is still not empty
+                }
+            }
+        }
     }
 
     private fun processDetection(job: OCRJob) {
         sendTextDetectionRequest(job.bitmap, job.language) { ocrResult ->
             val coordsWithText = resultToCoordinatesWithText(ocrResult.toString())
-            val boundingBoxWithText = coordsWithText.map { parseBoundingBoxes(it, job.bitmap.width, job.bitmap.height) }.filterNotNull()
+            val boundingBoxWithText = coordsWithText.map {
+                parseBoundingBoxes(
+                    it,
+                    job.bitmap.width,
+                    job.bitmap.height
+                )
+            }.filterNotNull()
             job.callback(boundingBoxWithText)
         }
     }
@@ -120,16 +132,24 @@ class PaddleOCRService(private val context: Context) {
     }
 
     private fun sendTextRecognitionRequest(bitmap: Bitmap, language: String?, callback: (String?) -> Unit) {
+        print("am in recog")
         val tempFile = createTempFile(context)
         FileOutputStream(tempFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
 
-        val result = module.callAttr("enqueue_paddle_ocr_text_recognition", tempFile.absolutePath, language)
+        try {
+            val result = module.callAttr(
+                "enqueue_paddle_ocr_text_recognition",
+                tempFile.absolutePath,
+                language
+            )
+            print("result is out")
 
-        callback(result.toString())
-
-        tempFile.delete()
+            callback(result.toString())
+        } finally {
+            tempFile.delete()
+        }
     }
 
     private fun sendTextDetectionRequest(bitmap: Bitmap, language: String?, callback: (PyObject) -> Unit) {
@@ -137,8 +157,13 @@ class PaddleOCRService(private val context: Context) {
         FileOutputStream(tempFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
+
         try {
-            val result = module.callAttr("enqueue_paddle_ocr_text_detection", tempFile.absolutePath, language)
+            val result = module.callAttr(
+                "enqueue_paddle_ocr_text_detection",
+                tempFile.absolutePath,
+                language
+            )
             callback(result)
         } finally {
             tempFile.delete()
@@ -191,55 +216,7 @@ class PaddleOCRService(private val context: Context) {
         }
     }
 }
-@Preview
-@Composable
-fun OCRApp() {
-    val coroutineScope = rememberCoroutineScope()
-    var boundingBoxResult by remember { mutableStateOf<String?>(null) }
-    var textOnlyResult by remember { mutableStateOf<String?>(null) }
-    val context = LocalContext.current
-    val bitmap = remember { BitmapFactory.decodeResource(context.resources, R.drawable.sample) }  // Ensure sample.png is in drawable folder
 
-    val paddleOCRService = PaddleOCRService(LocalContext.current)
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Loaded Image",
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    paddleOCRService.enqueuePaddleTextDetection(bitmap, "japan") { results ->
-                        boundingBoxResult = results?.joinToString(separator = "\n") {
-                            "Box: (${it.first.X1}, ${it.first.Y1}), (${it.first.X2}, ${it.first.Y2}) - Text: ${it.second}"
-                        } ?: "Failed to detect text"
-                    }
-                }
-            },
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Text("Detect Text BoundingBoxes")
-        }
-        Text("OCR Bounding Box Results: ${boundingBoxResult ?: "No result yet"}", modifier = Modifier.padding(bottom = 16.dp))
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    paddleOCRService.enqueuePaddleTextRecognition(bitmap, "japan") { text ->
-                        textOnlyResult = text ?: "Failed to recognize text"
-                    }
-                }
-            },
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Text("Perform OCR Text Recognition")
-        }
-        Text("OCR Text Only Results: ${textOnlyResult ?: "No result yet"}")
-    }
-}
 
 /*
 

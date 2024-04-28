@@ -76,7 +76,7 @@ fun <T> SettingsDropdown(
             onDismissRequest = { dropdownExpanded = false },
             modifier = dropdownModifier
                 .width(with(LocalDensity.current) { rowSize.width.toDp() })
-                .requiredSizeIn(maxHeight = 300.dp)
+                .requiredSizeIn(maxHeight = 280.dp)
         ) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(

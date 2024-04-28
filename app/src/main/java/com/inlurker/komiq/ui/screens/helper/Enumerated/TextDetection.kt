@@ -3,9 +3,9 @@ package com.inlurker.komiq.ui.screens.helper.Enumerated
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 
 enum class TextDetection(val description: String) {
+    MLKit("MLKit"),
     CRAFT("CRAFT"),
-    PADDLEOCR("Paddle OCR"),
-    MLKit("MLKit");
+    PADDLEOCR("Paddle OCR");
 
     companion object {
         fun getOptionList(languageSetting: ComicLanguageSetting): List<TextDetection> {
@@ -17,7 +17,7 @@ enum class TextDetection(val description: String) {
                 ComicLanguageSetting.French,
                 ComicLanguageSetting.German,
                 ComicLanguageSetting.English -> TextDetection.values().toList()
-                else -> listOf(CRAFT, MLKit)
+                else -> listOf(MLKit, CRAFT)
             }
         }
     }
