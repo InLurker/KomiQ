@@ -4,6 +4,7 @@ import PaddleOCRService
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +18,7 @@ import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.inlurker.komiq.R
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapter
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
@@ -184,7 +186,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         if (translatedPageLiveData.value != null) {
             return
         }
-
         val comicPageLiveData = comicPages[pageIndex].value
 
         comicPageLiveData?.let { bitmap ->
@@ -212,20 +213,39 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
     }
 
     suspend fun processAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap): List<Pair<BoundingBox, String>>? {
+        if (autoTranslateSettings.textDetection == TextDetection.PADDLEOCR || autoTranslateSettings.textRecognition == TextRecognition.PADDLEOCR) {
+            if (!isPaddleOCRInitialized()) {
+                initializePadleOCR(context)
+            }
+        }
+
+        if(autoTranslateSettings.textDetection == TextDetection.CRAFT) {
+            if (!isCraftInitialized()) {
+                initializeCraft(context)
+            }
+        }
+
+        if (autoTranslateSettings.textRecognition == TextRecognition.MangaOCR) {
+            //ensure MangaOCR Inference API is loaded
+            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.sample)
+            enqueueToMangaOCR(bitmap)
+        }
+
+
         return if (autoTranslateSettings.textRecognition.description == autoTranslateSettings.textDetection.description) {
-            recognizeAndTranslate(context, bitmap, autoTranslateSettings.textDetection)
+            recognizeAndTranslate(bitmap, autoTranslateSettings.textDetection)
         } else {
-            detectRecognizeAndTranslate(context, pageIndex, bitmap, autoTranslateSettings.textDetection)
+            detectRecognizeAndTranslate(
+                pageIndex,
+                bitmap,
+                autoTranslateSettings.textDetection
+            )
         }
     }
 
-    suspend fun recognizeAndTranslate(context: Context, bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
+    suspend fun recognizeAndTranslate(bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
         when (textDetection) {
             TextDetection.PADDLEOCR -> {
-                if (!isPaddleOCRInitialized()) {
-                    initializePadleOCR(context)
-                }
-
                 val detectedBoundingBoxes = enqueueToPaddleTextDetection(bitmap, comicLanguage)
                 detectedBoundingBoxes.map { boundingBox ->
                     async {
@@ -243,26 +263,29 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         }
     }
 
-    suspend fun detectRecognizeAndTranslate(context: Context, pageIndex: Int, bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
+    suspend fun detectRecognizeAndTranslate(pageIndex: Int, bitmap: Bitmap, textDetection: TextDetection): List<Pair<BoundingBox, String>>? = coroutineScope {
         val detectedBoundingBoxes = when (textDetection) {
             TextDetection.CRAFT -> {
-                if (!isCraftInitialized()) {
-                    initializeCraft(context)
-                }
-                enqueueToCRAFT(context, pageIndex, bitmap)
+                enqueueToCRAFT(pageIndex, bitmap)
             }
+
             TextDetection.PADDLEOCR -> {
-                if (!isPaddleOCRInitialized()) {
-                    initializePadleOCR(context)
-                }
                 enqueueToPaddleTextDetection(bitmap, comicLanguage).map { it.first }
             }
+
             else -> listOf()  // Consider handling MLKit or other models similarly
         }
         detectedBoundingBoxes.map { boundingBox ->
             async {
                 val croppedBitmap = cropBitmap(bitmap, boundingBox)
-                val text = enqueueToMangaOCR(croppedBitmap)
+                val text = when (autoTranslateSettings.textRecognition) {
+                    TextRecognition.MangaOCR -> enqueueToMangaOCR(croppedBitmap)
+                    TextRecognition.PADDLEOCR -> enqueueToPaddleTextRecognition(
+                        croppedBitmap,
+                        comicLanguage
+                    )
+                    else -> null
+                }
                 text?.let { recognizedText ->
                     if (!recognizedText.hasOnlyGarbage()) {
                         translateText(recognizedText)?.let { translatedText ->
@@ -284,7 +307,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         } else null
     }
 
-    suspend fun enqueueToCRAFT(context: Context, index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
+    suspend fun enqueueToCRAFT(index: Int, bitmap: Bitmap): List<BoundingBox> = coroutineScope {
         suspendCoroutine { continuation ->
             craftTextDetection.queueDetectText(index, bitmap) { boundingBoxes ->
                 continuation.resume(boundingBoxes)

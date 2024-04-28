@@ -31,9 +31,6 @@ object DeeplTranslateService {
         val translationRequest = TranslationRequest(text, sourceLang, targetLang)
         val jsonRequestBody = jsonAdapter.toJson(translationRequest)
 
-        // Log the JSON request body
-        println("JSON request: $jsonRequestBody")
-
         val requestBody = jsonRequestBody.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
         val request = Request.Builder()

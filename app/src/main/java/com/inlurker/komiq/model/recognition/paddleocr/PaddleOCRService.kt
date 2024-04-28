@@ -2,7 +2,6 @@
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -26,14 +25,25 @@ import com.inlurker.komiq.R
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
 
 class PaddleOCRService(private val context: Context) {
     private val pythonInstance: Python
     private val module: PyObject
+    private val ocrQueue: BlockingQueue<OCRJob> = ArrayBlockingQueue(10 ) // Queue with a fixed capacity
 
+    private data class OCRJob(
+        val bitmap: Bitmap,
+        val language: String?,
+        val callback: (Any?) -> Unit,
+        val isRecognition: Boolean  // To distinguish between detection and recognition
+    )
     private data class CoordinatesWithText(
         val points: List<List<Float>>,
         val texts: TextResponse
@@ -53,36 +63,73 @@ class PaddleOCRService(private val context: Context) {
         }
         pythonInstance = Python.getInstance()
         module = pythonInstance.getModule("paddle_ocr")
+
+        CoroutineScope(Dispatchers.IO).launch {
+            while (isActive) {  // isActive is a coroutine property that checks if the coroutine is still active
+                try {
+                    withContext(Dispatchers.IO) {
+                        val job = ocrQueue.take()
+                        if (job.isRecognition) {
+                            processRecognition(job)
+                        } else {
+                            processDetection(job)
+                        }
+                    }
+                } catch (e: Exception) {
+                    if (e is InterruptedException) {
+                        break // Exit the loop if the coroutine is interrupted
+                    }
+                    // Log or handle other exceptions
+                }
+            }
+        }
     }
 
     fun enqueuePaddleTextDetection(bitmap: Bitmap, language: String?, callback: (List<Pair<BoundingBox, String>>?) -> Unit) {
-        sendTextDetectionRequest(bitmap, language) { ocrResult ->
-            val result = ocrResult.asList()[1].toString()
-            val coordsWithText = resultToCoordinatesWithText(result)
-            val boundingBoxWithText = coordsWithText.map { parseBoundingBoxes(it, bitmap.width, bitmap.height) }.filterNotNull()
-            callback(boundingBoxWithText)
+        val genericCallback: (Any?) -> Unit = { result ->
+            if (result is List<*>) {
+                @Suppress("UNCHECKED_CAST")
+                callback(result as List<Pair<BoundingBox, String>>?)
+            } else {
+                // Handle the case where the result is not of the expected type
+                callback(null)
+            }
         }
+        ocrQueue.put(OCRJob(bitmap, language, genericCallback, isRecognition = false))
     }
 
     fun enqueuePaddleTextRecognition(bitmap: Bitmap, language: String?, callback: (String?) -> Unit) {
-        sendTextrecognitionRequest(bitmap, language) { ocrResult ->
-            ocrResult?.let { result ->
-                callback(result)
-            }
+        val genericCallback: (Any?) -> Unit = { result ->
+            callback(result as String?)
+        }
+        ocrQueue.put(OCRJob(bitmap, language, genericCallback, isRecognition = true))
+    }
+
+    private fun processDetection(job: OCRJob) {
+        sendTextDetectionRequest(job.bitmap, job.language) { ocrResult ->
+            val coordsWithText = resultToCoordinatesWithText(ocrResult.toString())
+            val boundingBoxWithText = coordsWithText.map { parseBoundingBoxes(it, job.bitmap.width, job.bitmap.height) }.filterNotNull()
+            job.callback(boundingBoxWithText)
         }
     }
 
-    private fun sendTextrecognitionRequest(bitmap: Bitmap, language: String?, callback: (String?) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val tempFile = createTempFile(context)
-            FileOutputStream(tempFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-            val result =
-                module.callAttr("enqueuePaddleOCR", tempFile.absolutePath, language).asList()
-            callback(result[2].toString())
-            tempFile.delete()
+    private fun processRecognition(job: OCRJob) {
+        sendTextRecognitionRequest(job.bitmap, job.language) { ocrResult ->
+            job.callback(ocrResult)
         }
+    }
+
+    private fun sendTextRecognitionRequest(bitmap: Bitmap, language: String?, callback: (String?) -> Unit) {
+        val tempFile = createTempFile(context)
+        FileOutputStream(tempFile).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+
+        val result = module.callAttr("enqueue_paddle_ocr_text_recognition", tempFile.absolutePath, language)
+
+        callback(result.toString())
+
+        tempFile.delete()
     }
 
     private fun sendTextDetectionRequest(bitmap: Bitmap, language: String?, callback: (PyObject) -> Unit) {
@@ -90,10 +137,12 @@ class PaddleOCRService(private val context: Context) {
         FileOutputStream(tempFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
-        val result = module.callAttr("enqueuePaddleOCR", tempFile.absolutePath, language)
-        callback(result)
-
-        tempFile.delete()
+        try {
+            val result = module.callAttr("enqueue_paddle_ocr_text_detection", tempFile.absolutePath, language)
+            callback(result)
+        } finally {
+            tempFile.delete()
+        }
     }
 
     private fun resultToCoordinatesWithText(inputString: String): List<CoordinatesWithText> {
@@ -123,7 +172,6 @@ class PaddleOCRService(private val context: Context) {
     private fun parseBoundingBoxes(coordsWithText: CoordinatesWithText, width: Int, height: Int): Pair<BoundingBox, String>? {
         val points = coordsWithText.points
         val text = coordsWithText.texts.text
-        Log.d("coords", points.toString())
 
         // Extract all x and y values separately and coerce them within image bounds
         val xValues = points.map { it[0].coerceIn(0f, width.toFloat()) }
@@ -143,8 +191,6 @@ class PaddleOCRService(private val context: Context) {
         }
     }
 }
-
-// Usage example within Kotlin environment
 @Preview
 @Composable
 fun OCRApp() {
@@ -194,7 +240,6 @@ fun OCRApp() {
         Text("OCR Text Only Results: ${textOnlyResult ?: "No result yet"}")
     }
 }
-
 
 /*
 

@@ -10,17 +10,14 @@ enum class TextDetection(val description: String) {
     companion object {
         fun getOptionList(languageSetting: ComicLanguageSetting): List<TextDetection> {
             return when (languageSetting) {
-                ComicLanguageSetting.Japanese -> TextDetection.values().toList()
+                ComicLanguageSetting.Japanese,
                 ComicLanguageSetting.Chinese,
                 ComicLanguageSetting.Korean,
                 ComicLanguageSetting.Arabic,
                 ComicLanguageSetting.French,
                 ComicLanguageSetting.German,
-                ComicLanguageSetting.English -> listOf(
-                    PADDLEOCR,
-                    MLKit
-                )
-                else -> listOf(MLKit)
+                ComicLanguageSetting.English -> TextDetection.values().toList()
+                else -> listOf(CRAFT, MLKit)
             }
         }
     }
