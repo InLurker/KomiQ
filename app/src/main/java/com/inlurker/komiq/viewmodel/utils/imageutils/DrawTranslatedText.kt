@@ -70,3 +70,97 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
 
     return outputImage
 }
+
+@RequiresApi(Build.VERSION_CODES.Q)
+fun drawTranslatedTextVertical(context: Context, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
+    val outputImage = inputImage.copy(Bitmap.Config.ARGB_8888, true)
+    val canvas = Canvas(outputImage)
+    val backgroundPaint = Paint().apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    val textPaint = Paint().apply {
+        isAntiAlias = true
+        color = Color.BLACK
+        textAlign = Paint.Align.CENTER
+        textSize = 35f  // Example font size, adjustable as needed
+    }
+
+    val fontMetrics = textPaint.fontMetrics
+    val fontHeight = Math.ceil((fontMetrics.descent - fontMetrics.top) * 0.9).toInt()
+    val columnWidth = Math.max(fontHeight, 38)  // Reasonable column width
+
+    textBoundingBoxPairs.forEach { (box, text) ->
+        canvas.drawRect(box.X1, box.Y1, box.X2, box.Y2, backgroundPaint)
+
+        // Determine how many columns of text will be needed
+        val totalHeightRequired = text.count { it != '\n' } * fontHeight
+        val columnsNeeded = Math.ceil(totalHeightRequired.toDouble() / (box.Y2 - box.Y1)).toInt()
+        val totalColumnWidth = columnWidth * columnsNeeded
+
+        // Start drawing from the rightmost point of the bounding box, moving left for each new column
+        var textPosX = (box.X1 + box.X2) / 2 + totalColumnWidth / 2 - columnWidth / 2
+        var textPosY = box.Y1
+        var currentColumnHeight = 0
+        var lastCharWasNewLine = false
+
+        for (char in text.toVerticalPunctuation()) {
+            if (char == '\n' || currentColumnHeight + fontHeight > box.Y2 - box.Y1) {
+                if (!lastCharWasNewLine) { // Move to the previous column if the last character was not a newline
+                    textPosX -= columnWidth
+                    currentColumnHeight = 0
+                }
+                textPosY = box.Y1
+                lastCharWasNewLine = char == '\n'
+                if (textPosX - columnWidth < box.X1) break // Stop drawing if we run out of horizontal space
+            } else {
+                lastCharWasNewLine = false
+                canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, textPaint)
+                textPosY += fontHeight
+                currentColumnHeight += fontHeight
+            }
+        }
+    }
+
+    return outputImage
+}
+
+//also help me convert them all from char to string from single quote to double quote ' to "
+val punctuationMap = mapOf(
+    ',' to "、",
+    '!' to "！",
+    '?' to "？",
+    ':' to "：",
+    ';' to "；",
+    '"' to "〝",
+    '\'' to "〞",
+    '(' to "（",
+    ')' to "）",
+    '[' to "［",
+    ']' to "］",
+    '{' to "｛",
+    '}' to "｝",
+    '…' to "︙",
+    '「' to "﹁",
+    '」' to "」",
+    '《' to "︽",
+    '》' to "︾",
+    '〈' to "︿",
+    '〉' to "﹀",
+    '﹃' to "﹃",
+    '﹄' to "﹄"
+)
+
+
+fun String.toVerticalPunctuation(): String {
+    val stringBuilder = StringBuilder()
+    this.forEach { char ->
+        val verticalChar = punctuationMap[char]
+        if (verticalChar != null) {
+            stringBuilder.append(verticalChar)
+        } else {
+            stringBuilder.append(char)
+        }
+    }
+    return stringBuilder.toString()
+}

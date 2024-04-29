@@ -24,6 +24,7 @@ import com.inlurker.komiq.model.data.kotatsu.parsers.chapterToKotatsuMangaChapte
 import com.inlurker.komiq.model.data.kotatsu.parsers.kotatsuMangaPageToPagesUrl
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
 import com.inlurker.komiq.model.data.repository.ComicRepository
+import com.inlurker.komiq.model.recognition.craft.CraftTextDetection
 import com.inlurker.komiq.model.recognition.helper.hasOnlyGarbage
 import com.inlurker.komiq.model.recognition.helper.removeSpaces
 import com.inlurker.komiq.model.recognition.mangaocr.MangaOCRService
@@ -37,13 +38,13 @@ import com.inlurker.komiq.model.translation.targetlanguages.TargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunENTargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunJATargetLanguage
 import com.inlurker.komiq.model.translation.targetlanguages.caiyun.CaiyunZHTargetLanguage
-import com.inlurker.komiq.model.recognition.craft.CraftTextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextDetection
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TextRecognition
 import com.inlurker.komiq.ui.screens.helper.Enumerated.TranslationEngine
 import com.inlurker.komiq.ui.screens.helper.ImageHelper.getChapterPageImageUrl
 import com.inlurker.komiq.ui.screens.helper.ReaderHelper.AutomaticTranslationSettingsData
 import com.inlurker.komiq.viewmodel.utils.imageutils.drawTranslatedText
+import com.inlurker.komiq.viewmodel.utils.imageutils.drawTranslatedTextVertical
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -213,7 +214,13 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 //                    }
 //                    drawBoundingBoxes(bitmap, boxes)
 
-                    drawTranslatedText(context, bitmap, translations)
+                    when (autoTranslateSettings.targetLanguage.languageName) {
+                        "Japanese",
+                        "Chinese",
+                        "Chinese (Simplified)",
+                        "Chinese (Traditional)"-> drawTranslatedTextVertical(context, bitmap, translations)
+                        else -> drawTranslatedText(context, bitmap, translations)
+                    }
                 } else {
                     comicPageLiveData
                 }
