@@ -13,6 +13,7 @@ import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.recognition.helper.combineLines
 import com.inlurker.komiq.model.recognition.helper.removeSpaces
 import com.inlurker.komiq.model.recognition.helper.reverseAndCombineLines
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +83,7 @@ class MLKitService(val language: ComicLanguageSetting) {
                                     block.boundingBox?.let { boundingBox ->
                                         val recognizedText = if(language == ComicLanguageSetting.Japanese || language == ComicLanguageSetting.Chinese) {
                                             block.text.reverseAndCombineLines().removeSpaces()
-                                        } else block.text
+                                        } else block.text.combineLines()
                                         Pair(boundingBox.toBoundingBox(), recognizedText)
                                     }
                                 }.filterNotNull()
@@ -102,7 +103,10 @@ class MLKitService(val language: ComicLanguageSetting) {
                     suspendCoroutine<String?> { continuation ->
                         textRecognizer.process(inputImage)
                             .addOnSuccessListener { visionText ->
-                                continuation.resume(visionText.text)
+                                val recognizedText = if(language == ComicLanguageSetting.Japanese || language == ComicLanguageSetting.Chinese) {
+                                    visionText.text.reverseAndCombineLines().removeSpaces()
+                                } else visionText.text.combineLines()
+                                continuation.resume(recognizedText)
                             }
                             .addOnFailureListener { e ->
                                 Log.d("MLKit Error", "Error processing text: ${e.message}")

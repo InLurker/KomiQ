@@ -11,6 +11,13 @@ fun String.reverseAndCombineLines(): String {
     return reversedLines.joinToString("")
 }
 
+fun String.combineLines(): String {
+    // Split the input string into lines and filter out any empty lines
+    val lines = this.split("\n").filter { it.isNotBlank() }
+    // Combine the reversed lines into a single string without spaces
+    return lines.joinToString(" ")
+}
+
 fun String.removeSpaces(): String {
     return this.replace(" ", "")
 }

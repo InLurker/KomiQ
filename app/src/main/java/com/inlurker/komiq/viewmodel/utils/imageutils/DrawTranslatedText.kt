@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.text.LineBreaker
 import android.os.Build
 import android.text.Layout
@@ -72,57 +73,58 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)
-fun drawTranslatedTextVertical(context: Context, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
+fun drawTranslatedTextVertical(fontSize: Float, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
     val outputImage = inputImage.copy(Bitmap.Config.ARGB_8888, true)
     val canvas = Canvas(outputImage)
     val backgroundPaint = Paint().apply {
         color = Color.WHITE
         style = Paint.Style.FILL
     }
-    val textPaint = Paint().apply {
-        isAntiAlias = true
-        color = Color.BLACK
-        textAlign = Paint.Align.CENTER
-        textSize = 35f  // Example font size, adjustable as needed
-    }
-
-    val fontMetrics = textPaint.fontMetrics
-    val fontHeight = Math.ceil((fontMetrics.descent - fontMetrics.top) * 0.9).toInt()
-    val columnWidth = Math.max(fontHeight, 38)  // Reasonable column width
 
     textBoundingBoxPairs.forEach { (box, text) ->
         canvas.drawRect(box.X1, box.Y1, box.X2, box.Y2, backgroundPaint)
 
-        // Determine how many columns of text will be needed
-        val totalHeightRequired = text.count { it != '\n' } * fontHeight
-        val columnsNeeded = Math.ceil(totalHeightRequired.toDouble() / (box.Y2 - box.Y1)).toInt()
-        val totalColumnWidth = columnWidth * columnsNeeded
+        // Dynamically calculate the font size based on the bounding box size and text length
+        val fontHeight = calculateFontHeight(fontSize)
+        val columnsNeeded = Math.ceil(text.length * fontHeight.toDouble() / (box.Y2 - box.Y1)).toInt()
+        val columnWidth = (box.X2 - box.X1) / columnsNeeded - 5 // subtract gap between columns
+
+        val textPaint = Paint().apply {
+            isAntiAlias = true
+            color = Color.BLACK
+            textAlign = Paint.Align.CENTER
+            textSize = fontSize
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) // Set typeface to semibold
+        }
 
         // Start drawing from the rightmost point of the bounding box, moving left for each new column
-        var textPosX = (box.X1 + box.X2) / 2 + totalColumnWidth / 2 - columnWidth / 2
+        var textPosX = box.X2 - columnWidth / 2 - 3 // Start from the right with a gap
         var textPosY = box.Y1
         var currentColumnHeight = 0
-        var lastCharWasNewLine = false
 
         for (char in text.toVerticalPunctuation()) {
             if (char == '\n' || currentColumnHeight + fontHeight > box.Y2 - box.Y1) {
-                if (!lastCharWasNewLine) { // Move to the previous column if the last character was not a newline
-                    textPosX -= columnWidth
-                    currentColumnHeight = 0
-                }
+                textPosX -= (columnWidth + 5) // Move to the next column with a gap
                 textPosY = box.Y1
-                lastCharWasNewLine = char == '\n'
-                if (textPosX - columnWidth < box.X1) break // Stop drawing if we run out of horizontal space
-            } else {
-                lastCharWasNewLine = false
-                canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, textPaint)
-                textPosY += fontHeight
-                currentColumnHeight += fontHeight
+                currentColumnHeight = 0
+                if (textPosX < box.X1) break // Stop drawing if we run out of horizontal space
+                if (char == '\n') continue // Skip further processing for newline character itself
             }
+            canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, textPaint)
+            textPosY += fontHeight
+            currentColumnHeight += fontHeight
         }
     }
 
     return outputImage
+}
+
+
+fun calculateFontHeight(fontSize: Float): Int {
+    val paint = Paint()
+    paint.textSize = fontSize
+    val fm = paint.fontMetrics
+    return Math.ceil((fm.descent - fm.ascent) * 0.9).toInt()
 }
 
 //also help me convert them all from char to string from single quote to double quote ' to "
@@ -147,8 +149,8 @@ val punctuationMap = mapOf(
     '》' to "︾",
     '〈' to "︿",
     '〉' to "﹀",
-    '﹃' to "﹃",
-    '﹄' to "﹄"
+    '『' to "﹃",
+    '』' to "﹄"
 )
 
 

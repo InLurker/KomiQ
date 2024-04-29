@@ -213,13 +213,19 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
 //                        Log.d("Box", it.toString())
 //                    }
 //                    drawBoundingBoxes(bitmap, boxes)
+                    withContext(Dispatchers.IO) {
+                        when (autoTranslateSettings.targetLanguage.languageName) {
+                            "Japanese" -> drawTranslatedTextVertical(32f, bitmap, translations)
+                            "Chinese",
+                            "Chinese (Simplified)",
+                            "Chinese (Traditional)" -> drawTranslatedTextVertical(
+                                35f,
+                                bitmap,
+                                translations
+                            )
 
-                    when (autoTranslateSettings.targetLanguage.languageName) {
-                        "Japanese",
-                        "Chinese",
-                        "Chinese (Simplified)",
-                        "Chinese (Traditional)"-> drawTranslatedTextVertical(context, bitmap, translations)
-                        else -> drawTranslatedText(context, bitmap, translations)
+                            else -> drawTranslatedText(context, bitmap, translations)
+                        }
                     }
                 } else {
                     comicPageLiveData
@@ -329,7 +335,6 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
                         )
                     }
                 }
-                Log.d("Recog_Task", "Recognition Done")
                 text?.let { recognizedText ->
                     if (!recognizedText.hasOnlyGarbage()) {
                         translateText(recognizedText)?.let { translatedText ->
