@@ -52,6 +52,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.parsers.model.MangaSource
+import org.opencv.android.OpenCVLoader
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -137,6 +138,12 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
             translatedPages = Array(pageUrls.size) { MutableLiveData<Bitmap>() }
 
             imageLoader = ImageLoader(application as Context)
+        }
+
+        if (!OpenCVLoader.initDebug()) {
+            Log.e("OpenCV", "Unable to load OpenCV!")
+        } else {
+            Log.d("OpenCV", "OpenCV loaded successfully!")
         }
     }
 
@@ -322,6 +329,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         detectedBoundingBoxes?.map { boundingBox ->
             async {
                 val croppedBitmap = cropBitmap(bitmap, boundingBox)
+                // croppedBitmaps = croppedBitmap
                 val text = withContext(Dispatchers.IO) {
                     when (autoTranslateSettings.textRecognition) {
                         TextRecognition.MangaOCR -> enqueueToMangaOCR(croppedBitmap)
@@ -393,6 +401,7 @@ class ComicReaderViewModel(application: Application): AndroidViewModel(applicati
         // Calculate the width and height of the cropped area
         val width = (boundingBox.X2 - boundingBox.X1).toInt()
         val height = (boundingBox.Y2 - boundingBox.Y1).toInt()
+
 
         // Crop the bitmap based on the bounding box coordinates
         return Bitmap.createBitmap(sourceBitmap, boundingBox.X1.toInt(), boundingBox.Y1.toInt(), width, height)

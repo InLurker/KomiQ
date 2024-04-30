@@ -19,27 +19,79 @@ import com.inlurker.komiq.model.data.boundingbox.BoundingBox
 
 @RequiresApi(Build.VERSION_CODES.Q)
 fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
-    val outputImage = inputImage.copy(Bitmap.Config.ARGB_8888, true)
-    val canvas = Canvas(outputImage)
-    val backgroundPaint = Paint().apply {
-        color = Color.WHITE
-        style = Paint.Style.FILL
+    val inpaintBoxes = mutableListOf<BoundingBox>()
+    val infillBoxes = mutableListOf<Pair<BoundingBox, Int>>()
+    var outputBitmap = inputImage.copy(Bitmap.Config.ARGB_8888, true)
+
+    textBoundingBoxPairs.forEach { (box, _) ->
+        val eval = shouldUseSingleColorFill(outputBitmap, box)
+        if (eval.first) {
+            infillBoxes += Pair(box, eval.second)
+        } else inpaintBoxes += box
     }
+
+    val canvas = Canvas(outputBitmap)
+    if (infillBoxes.isNotEmpty()) {
+        infillBoxes.forEach { (box, color) ->
+            // Fill the bounding box with white
+            infillBoundingBox(canvas, box, color)
+        }
+    }
+
+    if (inpaintBoxes.isNotEmpty()) {
+        outputBitmap = inpaintBitmap(outputBitmap, inpaintBoxes)
+    }
+
     val textPaint = TextPaint().apply {
         isAntiAlias = true
         color = Color.BLACK
         textAlign = Paint.Align.LEFT
-        typeface = ResourcesCompat.getFont(context, R.font.animeace)
+        typeface = Typeface.create(ResourcesCompat.getFont(context, R.font.animeace), Typeface.BOLD)
+    }
+    drawTextInBox(outputBitmap, textPaint, textBoundingBoxPairs)
+
+    return outputBitmap
+}
+
+
+@RequiresApi(Build.VERSION_CODES.Q)
+fun drawTranslatedTextVertical(fontSize: Float, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
+    // Create a copy of the input image in the correct format
+    val inpaintBoxes = mutableListOf<BoundingBox>()
+    val infillBoxes = mutableListOf<Pair<BoundingBox, Int>>()
+    var outputBitmap = inputImage.copy(Bitmap.Config.ARGB_8888, true)
+
+    textBoundingBoxPairs.forEach { (box, _) ->
+        val eval = shouldUseSingleColorFill(outputBitmap, box)
+        if (eval.first) {
+            infillBoxes += Pair(box, eval.second)
+        } else inpaintBoxes += box
     }
 
-    textBoundingBoxPairs.forEach { (box, text) ->
-        // Fill the bounding box with white
-        canvas.drawRect(box.X1, box.Y1, box.X2, box.Y2, backgroundPaint)
+    val canvas = Canvas(outputBitmap)
+    if (infillBoxes.isNotEmpty()) {
+        infillBoxes.forEach { (box, color) ->
+            // Fill the bounding box with white
+            infillBoundingBox(canvas, box, color)
+        }
+    }
 
-        var textSize = 30f
+    if (inpaintBoxes.isNotEmpty()) {
+        outputBitmap = inpaintBitmap(outputBitmap, inpaintBoxes)
+    }
+
+    drawVerticalText(outputBitmap, fontSize, textBoundingBoxPairs,)
+
+    return outputBitmap
+}
+
+fun drawTextInBox(inputImage: Bitmap, textPaint: TextPaint, textBoundingBoxPairs: List<Pair<BoundingBox, String>>) {
+    val canvas = Canvas(inputImage)
+    textBoundingBoxPairs.forEach { (box, text) ->
+        var textSize = 33f
         var staticLayout: StaticLayout
         val targetWidth = ((box.X2 - box.X1) * 0.9).toInt() // 90% of bounding box width
-        val targetHeight = (box.Y2 - box.Y1) * 0.7 // 70% of bounding box height
+        val targetHeight = (box.Y2 - box.Y1) * 0.8 // 70% of bounding box height
 
         do {
             textPaint.textSize = textSize
@@ -68,55 +120,41 @@ fun drawTranslatedText(context: Context, inputImage: Bitmap, textBoundingBoxPair
         staticLayout.draw(canvas)
         canvas.restore()
     }
-
-    return outputImage
 }
 
-@RequiresApi(Build.VERSION_CODES.Q)
-fun drawTranslatedTextVertical(fontSize: Float, inputImage: Bitmap, textBoundingBoxPairs: List<Pair<BoundingBox, String>>): Bitmap {
-    val outputImage = inputImage.copy(Bitmap.Config.ARGB_8888, true)
-    val canvas = Canvas(outputImage)
-    val backgroundPaint = Paint().apply {
-        color = Color.WHITE
-        style = Paint.Style.FILL
+fun drawVerticalText(inputImage: Bitmap, fontSize: Float, textBoundingBoxPairs: List<Pair<BoundingBox, String>>) {
+    val canvas = Canvas(inputImage)
+    val textPaint = Paint().apply {
+        isAntiAlias = true
+        color = Color.BLACK
+        textAlign = Paint.Align.CENTER
+        textSize = fontSize
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
+    val fontHeight = calculateFontHeight(fontSize)
 
     textBoundingBoxPairs.forEach { (box, text) ->
-        canvas.drawRect(box.X1, box.Y1, box.X2, box.Y2, backgroundPaint)
+        val columnsNeeded =
+            Math.ceil(text.length * fontHeight.toDouble() / (box.Y2 - box.Y1)).toInt()
+        val columnWidth = (box.X2 - box.X1) / columnsNeeded - 5
 
-        // Dynamically calculate the font size based on the bounding box size and text length
-        val fontHeight = calculateFontHeight(fontSize)
-        val columnsNeeded = Math.ceil(text.length * fontHeight.toDouble() / (box.Y2 - box.Y1)).toInt()
-        val columnWidth = (box.X2 - box.X1) / columnsNeeded - 5 // subtract gap between columns
-
-        val textPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.BLACK
-            textAlign = Paint.Align.CENTER
-            textSize = fontSize
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) // Set typeface to semibold
-        }
-
-        // Start drawing from the rightmost point of the bounding box, moving left for each new column
-        var textPosX = box.X2 - columnWidth / 2 - 3 // Start from the right with a gap
+        var textPosX = box.X2 - columnWidth / 2 - 3
         var textPosY = box.Y1
         var currentColumnHeight = 0
 
         for (char in text.toVerticalPunctuation()) {
             if (char == '\n' || currentColumnHeight + fontHeight > box.Y2 - box.Y1) {
-                textPosX -= (columnWidth + 5) // Move to the next column with a gap
+                textPosX -= (columnWidth + 5)
                 textPosY = box.Y1
                 currentColumnHeight = 0
-                if (textPosX < box.X1) break // Stop drawing if we run out of horizontal space
-                if (char == '\n') continue // Skip further processing for newline character itself
+                if (textPosX < box.X1) break
+                if (char == '\n') continue
             }
             canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, textPaint)
             textPosY += fontHeight
             currentColumnHeight += fontHeight
         }
     }
-
-    return outputImage
 }
 
 

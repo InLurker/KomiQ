@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "KomiQ"
 include ':app'
+include ':opencv'
