@@ -87,6 +87,12 @@ fun drawTranslatedTextVertical(fontSize: Float, inputImage: Bitmap, textBounding
 
 fun drawTextInBox(inputImage: Bitmap, textPaint: TextPaint, textBoundingBoxPairs: List<Pair<BoundingBox, String>>) {
     val canvas = Canvas(inputImage)
+
+    val strokePaint = TextPaint(textPaint).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 8f // Adjust stroke width to your preference
+        color = Color.WHITE
+    }
     textBoundingBoxPairs.forEach { (box, text) ->
         var textSize = 33f
         var staticLayout: StaticLayout
@@ -110,6 +116,12 @@ fun drawTextInBox(inputImage: Bitmap, textPaint: TextPaint, textBoundingBoxPairs
             textSize -= 3
         } while (textSize >= 15f)
 
+        strokePaint.textSize = textSize
+        val strokeBuilder = StaticLayout.Builder.obtain(text, 0, text.length, strokePaint, targetWidth)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL)
+            .setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY).build()
+
         // Center the text in the bounding box taking into account the reduced target width and height
         val xCoordinate = box.X1 + (box.X2 - box.X1 - targetWidth) / 2f
         val yCoordinate = box.Y1 + (box.Y2 - box.Y1 - staticLayout.height) / 2f
@@ -117,6 +129,7 @@ fun drawTextInBox(inputImage: Bitmap, textPaint: TextPaint, textBoundingBoxPairs
         // Save the canvas state
         canvas.save()
         canvas.translate(xCoordinate, yCoordinate)
+        strokeBuilder.draw(canvas)
         staticLayout.draw(canvas)
         canvas.restore()
     }
@@ -131,6 +144,14 @@ fun drawVerticalText(inputImage: Bitmap, fontSize: Float, textBoundingBoxPairs: 
         textSize = fontSize
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
+    // Set up the stroke paint
+    val strokePaint = Paint(textPaint).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 8f // Adjust the stroke width according to your preference
+        color = Color.WHITE
+    }
+
+
     val fontHeight = calculateFontHeight(fontSize)
 
     textBoundingBoxPairs.forEach { (box, text) ->
@@ -150,7 +171,9 @@ fun drawVerticalText(inputImage: Bitmap, fontSize: Float, textBoundingBoxPairs: 
                 if (textPosX < box.X1) break
                 if (char == '\n') continue
             }
+            canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, strokePaint)
             canvas.drawText(char.toString(), textPosX, textPosY + fontHeight, textPaint)
+
             textPosY += fontHeight
             currentColumnHeight += fontHeight
         }

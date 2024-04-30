@@ -6,6 +6,10 @@ import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.inlurker.komiq.model.data.boundingbox.BoundingBox
+import com.inlurker.komiq.model.data.repository.ComicLanguageSetting
+import com.inlurker.komiq.model.recognition.helper.combineLines
+import com.inlurker.komiq.model.recognition.helper.removeSpaces
+import com.inlurker.komiq.model.recognition.helper.reverseAndCombineLines
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -127,7 +131,10 @@ class PaddleOCRService(private val context: Context) {
 
     private fun processRecognition(job: OCRJob) {
         sendTextRecognitionRequest(job.bitmap, job.language) { ocrResult ->
-            job.callback(ocrResult)
+            val result = if (job.language == ComicLanguageSetting.Japanese.toPaddleOCRType() || job.language == ComicLanguageSetting.Chinese.toPaddleOCRType() ) {
+                ocrResult?.removeSpaces()?.reverseAndCombineLines()
+            } else ocrResult?.combineLines()
+            job.callback(result)
         }
     }
 
